@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "blaze-twitch-mod",
+	"version": "${version}",
+	"name": "BlazinBlaze Twitch Mod",
+	"description": "Adds Blazin Twitch Integration to Minecraft!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/blaze-twitch-mod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod"
+		],
+		"client": [
+			"net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchModClient"
+		],
+		"fabric-datagen": [
+			"net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchModDataGenerator"
+		]
+	},
+	"mixins": [
+		"blaze-twitch-mod.mixins.json",
+		{
+			"config": "blaze-twitch-mod.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.10",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}

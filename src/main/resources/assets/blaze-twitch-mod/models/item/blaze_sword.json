@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "blaze-twitch-mod:item/blaze_sword"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "entity.blaze-twitch-mod.mega_creeper": "§4§lMega Creeper",
+  "entity.blaze-twitch-mod.loot_crate_entity": "§lLoot Crate",
+  "entity.blaze-twitch-mod.beddy_entity": "§lBeddy",
+
+  "block.blaze-twitch-mod.nuclear_tnt": "§a§lNuclear TNT",
+
+  "item.blaze-twitch-mod.nuclear_tnt": "§a§lNuclear TNT",
+  "item.blaze-twitch-mod.mail_item": "Mail Message",
+  "item.blaze-twitch-mod.mail_item_sinister": "Sinister Mail Message",
+  "item.blaze-twitch-mod.mail_item_epic": "Epic Mail Message",
+  "item.blaze-twitch-mod.mail_item_blazin": "Blazin Mail Message",
+  "item.blaze-twitch-mod.mail_item_minecraft": "Minecraft Mail Message",
+  "item.blaze-twitch-mod.mail_item_error": "Errored Mail Message",
+  "item.blaze-twitch-mod.mail_item_starry": "Starry Mail Message",
+  "item.blaze-twitch-mod.blaze_sword": "§c§l§oBlaze Sword",
+
+  "item.blaze-twitch-mod.mail_author.info": "Author: %1$s"
+}

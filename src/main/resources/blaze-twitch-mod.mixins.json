@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"package": "net.blazinblaze.blazetwitchmod.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"ExampleMixin",
+		"CatEntityAccess",
+		"WolfEntityAccess"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

@@ -1,0 +1,26 @@
+{
+  "wee-sound-effect": {
+    "subtitle": "sound.blaze-twitch-mod.wee-sound-effect",
+    "sounds": [
+      "blaze-twitch-mod:wee-sound-effect"
+    ]
+  },
+  "mail-item-use": {
+    "subtitle": "sound.blaze-twitch-mod.mail-item-use",
+    "sounds": [
+      "blaze-twitch-mod:mail-item-use"
+    ]
+  },
+  "tada-sound-effect": {
+    "subtitle": "sound.blaze-twitch-mod.tada-sound-effect",
+    "sounds": [
+      "blaze-twitch-mod:tada-sound-effect"
+    ]
+  },
+  "thud-sound-effect": {
+    "subtitle": "sound.blaze-twitch-mod.thud-sound-effect",
+    "sounds": [
+      "blaze-twitch-mod:thud-sound-effect"
+    ]
+  }
+}
