@@ -9,10 +9,7 @@ import net.blazinblaze.blazetwitchmod.effect.RandomTeleportEffect;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.blazinblaze.blazetwitchmod.entity.custom.MegaCreeperEntity;
 import net.blazinblaze.blazetwitchmod.item.BlazinBlazeTwitchModItems;
-import net.blazinblaze.blazetwitchmod.networking.FollowNotifyS2CPayload;
-import net.blazinblaze.blazetwitchmod.networking.MailScreenS2CPayload;
-import net.blazinblaze.blazetwitchmod.networking.OverlayMessageS2CPayload;
-import net.blazinblaze.blazetwitchmod.networking.PlaySoundS2CPayload;
+import net.blazinblaze.blazetwitchmod.networking.*;
 import net.blazinblaze.blazetwitchmod.sound.BlazinBlazeTwitchModSounds;
 import net.fabricmc.api.ModInitializer;
 
@@ -88,6 +85,7 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		PayloadTypeRegistry.playS2C().register(FollowNotifyS2CPayload.ID, FollowNotifyS2CPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(PlaySoundS2CPayload.ID, PlaySoundS2CPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(OverlayMessageS2CPayload.ID, OverlayMessageS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(VoiceMessageS2CPayload.ID, VoiceMessageS2CPayload.CODEC);
 
 		ServerLifecycleEvents.SERVER_STARTED.register((server -> {
 			serverRef = server;
@@ -97,23 +95,23 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 			serverRef = null;
 		}));
 
-		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
-			player.sendMessage(Text.literal("EVENT TRIGGERED"));
-			DynamicRegistryManager registryManager = destination.getRegistryManager();
-			if(Objects.equals(origin.getDimensionEntry(), registryManager.getOrThrow(RegistryKeys.DIMENSION_TYPE).getEntry(DimensionTypes.THE_NETHER.getValue()).get())) {
-				BlazinBlazeLootPlayerData playerState = BlazinBlazeStateSaverAndLoader.getPlayerState(player);
+		//ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
+			//player.sendMessage(Text.literal("EVENT TRIGGERED"));
+			//DynamicRegistryManager registryManager = destination.getRegistryManager();
+			//if(Objects.equals(origin.getDimensionEntry(), registryManager.getOrThrow(RegistryKeys.DIMENSION_TYPE).getEntry(DimensionTypes.THE_NETHER.getValue()).get())) {
+				//BlazinBlazeLootPlayerData playerState = BlazinBlazeStateSaverAndLoader.getPlayerState(player);
 
-				player.sendMessage(Text.literal(String.valueOf(playerState.netherLootCrates)));
+				//player.sendMessage(Text.literal(String.valueOf(playerState.netherLootCrates)));
 
-				for(int i = 0; i < playerState.netherLootCrates; i++) {
-					BlazinBlazeTwitchModEntities.LOOT_CRATE_ENTITY.spawn(destination, new BlockPos((int) player.getX(), (int) (player.getY() + 5), (int) player.getZ()), SpawnReason.MOB_SUMMONED);
-				}
+				//for(int i = 0; i < playerState.netherLootCrates; i++) {
+					//BlazinBlazeTwitchModEntities.LOOT_CRATE_ENTITY.spawn(destination, new BlockPos((int) player.getX(), (int) (player.getY() + 5), (int) player.getZ()), SpawnReason.MOB_SUMMONED);
+				//}
 
-				playerState.netherLootCrates = 0;
+				//playerState.netherLootCrates = 0;
 
-				PacketByteBuf data = PacketByteBufs.create();
-				data.writeInt(playerState.netherLootCrates);
-			}
-		});
+				//PacketByteBuf data = PacketByteBufs.create();
+				//data.writeInt(playerState.netherLootCrates);
+			//}
+		//});
 	}
 }

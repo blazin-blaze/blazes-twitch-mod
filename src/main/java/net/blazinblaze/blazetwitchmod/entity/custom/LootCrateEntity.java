@@ -57,6 +57,7 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.GenericContainerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
@@ -146,7 +147,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
             Map.entry(Items.NETHERITE_BOOTS.getDefaultStack(), new ItemRarity(0.05, false, true, "armor")),
             Map.entry(Items.POTION.getDefaultStack(), new ItemRarity(0.5, false, false, "none")),
             Map.entry(Items.TNT.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(BlazinBlazeTwitchModItems.BLAZE_SWORD.getDefaultStack(), new ItemRarity(0.001, false, true, "tool")),
+            //Map.entry(BlazinBlazeTwitchModItems.BLAZE_SWORD.getDefaultStack(), new ItemRarity(0.001, false, true, "tool")),
             Map.entry(BlazinBlazeTwitchModBlocks.NUCLEAR_TNT.asItem().getDefaultStack(), new ItemRarity(0.1, true, false, "none")),
             Map.entry(Items.BOW.getDefaultStack(), new ItemRarity(0.5, false, true, "bow")),
             Map.entry(Items.CROSSBOW.getDefaultStack(), new ItemRarity(0.5, false, true, "crossbow")));
@@ -271,7 +272,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
         if (this.isOnGround()) {
             if(!getHasTouchedGround()) {
                 this.playSound(BlazinBlazeTwitchModSounds.THUD_SOUND_EFFECT, 1.0F, 1.0F);
-                this.getWorld().addParticle(ParticleTypes.EXPLOSION, this.getX(), (this.getY() + .3), this.getZ(), 1.0, 1.0, 1.0);
+                this.getWorld().addParticleClient(ParticleTypes.EXPLOSION, this.getX(), (this.getY() + .3), this.getZ(), 1.0, 1.0, 1.0);
                 setHasTouchedGround(true);
                 this.setVelocity(this.getVelocity().multiply(0.7, -0.5, 0.7));
             }else {
@@ -452,7 +453,6 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
         nbt.putBoolean("has_touched_ground", getHasTouchedGround());
     }
 
-
     @Override
     public Text getDisplayName() {
         return label;
@@ -465,32 +465,32 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
 
     @Override
     protected void readCustomDataFromNbt(NbtCompound nbt) {
-        setDestructionTimer(nbt.getInt("destruction_timer"));
-        setHasTouchedGround(nbt.getBoolean("has_touched_ground"));
+        setDestructionTimer(nbt.getInt("destruction_timer").orElse(0));
+        setHasTouchedGround(nbt.getBoolean("has_touched_ground").orElse(false));
     }
 
-    private long getLootTableSeed() {
-        return 0L;
-    }
+    //private long getLootTableSeed() {
+        //return 0L;
+    //}
 
-    protected void dropLoot(ServerWorld world, DamageSource damageSource) {
-        Optional<RegistryKey<LootTable>> optional = this.getLootTableKey();
-        if (!optional.isEmpty()) {
-            LootTable lootTable = world.getServer().getReloadableRegistries().getLootTable((RegistryKey<LootTable>)optional.get());
-            LootWorldContext.Builder builder = new LootWorldContext.Builder(world)
-                    .add(LootContextParameters.THIS_ENTITY, this)
-                    .add(LootContextParameters.ORIGIN, this.getPos())
-                    .add(LootContextParameters.DAMAGE_SOURCE, damageSource)
-                    .addOptional(LootContextParameters.ATTACKING_ENTITY, damageSource.getAttacker())
-                    .addOptional(LootContextParameters.DIRECT_ATTACKING_ENTITY, damageSource.getSource());
+    //protected void dropLoot(ServerWorld world, DamageSource damageSource) {
+        //<RegistryKey<LootTable>> optional = this.getLootTableKey();
+        //if (!optional.isEmpty()) {
+            //LootTable lootTable = world.getServer().getReloadableRegistries().getLootTable((RegistryKey<LootTable>)optional.get());
+            //LootWorldContext.Builder builder = new LootWorldContext.Builder(world)
+                    //.add(LootContextParameters.THIS_ENTITY, this)
+                    //.add(LootContextParameters.ORIGIN, this.getPos())
+                    //.add(LootContextParameters.DAMAGE_SOURCE, damageSource)
+                    //.addOptional(LootContextParameters.ATTACKING_ENTITY, damageSource.getAttacker())
+                    //.addOptional(LootContextParameters.DIRECT_ATTACKING_ENTITY, damageSource.getSource());
             //if (causedByPlayer && this.attackingPlayer != null) {
                 //builder = builder.add(LootContextParameters.LAST_DAMAGE_PLAYER, this.attackingPlayer).luck(this.attackingPlayer.getLuck());
             //}
 
-            LootWorldContext lootWorldContext = builder.build(LootContextTypes.ENTITY);
-            lootTable.generateLoot(lootWorldContext, this.getLootTableSeed(), stack -> this.dropStack(world, stack));
-        }
-    }
+            //LootWorldContext lootWorldContext = builder.build(LootContextTypes.ENTITY);
+            //lootTable.generateLoot(lootWorldContext, this.getLootTableSeed(), stack -> this.dropStack(world, stack));
+        //}
+    //}
 
     //@Override
     //public SimpleInventory getInventory() {

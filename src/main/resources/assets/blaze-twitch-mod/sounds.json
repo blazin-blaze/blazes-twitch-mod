@@ -22,5 +22,11 @@
     "sounds": [
       "blaze-twitch-mod:thud-sound-effect"
     ]
+  },
+  "voice-message-effect": {
+    "subtitle": "sound.blaze-twitch-mod.voice-message-effect",
+    "sounds": [
+      "blaze-twitch-mod:voice-message-effect"
+    ]
   }
 }

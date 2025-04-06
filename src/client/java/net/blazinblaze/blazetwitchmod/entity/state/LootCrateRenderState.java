@@ -5,4 +5,8 @@ import net.minecraft.entity.AnimationState;
 
 public class LootCrateRenderState extends EntityRenderState {
     public final AnimationState idleAnimationState = new AnimationState();
+
+    public AnimationState getIdleAnimationState() {
+        return idleAnimationState;
+    }
 }

@@ -33,27 +33,47 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 
 public class MegaCreeperEntity extends CreeperEntity {
-    private static final TrackedData<Integer> FUSE_SPEED = DataTracker.registerData(MegaCreeperEntity.class, TrackedDataHandlerRegistry.INTEGER);
-    private static final TrackedData<Boolean> CHARGED = DataTracker.registerData(MegaCreeperEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
-    private static final TrackedData<Boolean> IGNITED = DataTracker.registerData(MegaCreeperEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
+    private static final TrackedData<Integer> FUSE_SPEED;
+    private static final TrackedData<Boolean> CHARGED;
+    private static final TrackedData<Boolean> IGNITED;
+    private static final boolean DEFAULT_CHARGED = false;
+    private static final boolean DEFAULT_IGNITED = false;
+    private static final short DEFAULT_FUSE = 20;
+    private static final int DEFAULT_EXPLOSION_RADIUS = 200;
     private int lastFuseTime;
     private int currentFuseTime;
-    private int fuseTime = 10;
-    private int explosionRadius = 50;
+    private int fuseTime = 20;
+    private int explosionRadius = 200;
     private int headsDropped;
 
     public MegaCreeperEntity(EntityType<? extends CreeperEntity> entityType, World world) {
         super(entityType, world);
     }
 
-    public static DefaultAttributeContainer.Builder createCreeperAttributes() {
-        return HostileEntity.createHostileAttributes().add(EntityAttributes.MOVEMENT_SPEED, 1);
+    protected void initGoals() {
+        this.goalSelector.add(1, new SwimGoal(this));
+        this.goalSelector.add(2, new CreeperIgniteGoal(this));
+        this.goalSelector.add(3, new FleeEntityGoal(this, OcelotEntity.class, 6.0F, (double)1.0F, 1.2));
+        this.goalSelector.add(3, new FleeEntityGoal(this, CatEntity.class, 6.0F, (double)1.0F, 1.2));
+        this.goalSelector.add(4, new MeleeAttackGoal(this, (double)1.0F, false));
+        this.goalSelector.add(5, new WanderAroundFarGoal(this, 0.8));
+        this.goalSelector.add(6, new LookAtEntityGoal(this, PlayerEntity.class, 8.0F));
+        this.goalSelector.add(6, new LookAroundGoal(this));
+        this.targetSelector.add(1, new ActiveTargetGoal(this, PlayerEntity.class, true));
+        this.targetSelector.add(2, new RevengeGoal(this, new Class[0]));
     }
 
-    @Override
-    public boolean handleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
-        boolean bl = super.handleFallDamage(fallDistance, damageMultiplier, damageSource);
-        this.currentFuseTime += (int)(fallDistance * 1.5F);
+    public static DefaultAttributeContainer.Builder createCreeperAttributes() {
+        return HostileEntity.createHostileAttributes().add(EntityAttributes.MOVEMENT_SPEED, (double)1F);
+    }
+
+    public int getSafeFallDistance() {
+        return this.getTarget() == null ? this.getSafeFallDistance(0.0F) : this.getSafeFallDistance(this.getHealth() - 1.0F);
+    }
+
+    public boolean handleFallDamage(double fallDistance, float damagePerDistance, DamageSource damageSource) {
+        boolean bl = super.handleFallDamage(fallDistance, damagePerDistance, damageSource);
+        this.currentFuseTime += (int)(fallDistance * (double)1.5F);
         if (this.currentFuseTime > this.fuseTime - 5) {
             this.currentFuseTime = this.fuseTime - 5;
         }
@@ -61,7 +81,6 @@ public class MegaCreeperEntity extends CreeperEntity {
         return bl;
     }
 
-    @Override
     protected void initDataTracker(DataTracker.Builder builder) {
         super.initDataTracker(builder);
         builder.add(FUSE_SPEED, -1);
@@ -69,36 +88,25 @@ public class MegaCreeperEntity extends CreeperEntity {
         builder.add(IGNITED, false);
     }
 
-    @Override
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
-        if (this.dataTracker.get(CHARGED)) {
-            nbt.putBoolean("powered", true);
-        }
-
+        nbt.putBoolean("powered", this.isCharged());
         nbt.putShort("Fuse", (short)this.fuseTime);
-        nbt.putByte("ExplosionRadius", (byte)this.explosionRadius);
+        nbt.putInt("ExplosionRadius", this.explosionRadius);
         nbt.putBoolean("ignited", this.isIgnited());
     }
 
-    @Override
     public void readCustomDataFromNbt(NbtCompound nbt) {
         super.readCustomDataFromNbt(nbt);
-        this.dataTracker.set(CHARGED, nbt.getBoolean("powered"));
-        if (nbt.contains("Fuse", NbtElement.NUMBER_TYPE)) {
-            this.fuseTime = nbt.getShort("Fuse");
-        }
-
-        if (nbt.contains("ExplosionRadius", NbtElement.NUMBER_TYPE)) {
-            this.explosionRadius = nbt.getByte("ExplosionRadius");
-        }
-
-        if (nbt.getBoolean("ignited")) {
+        this.dataTracker.set(CHARGED, nbt.getBoolean("powered", false));
+        this.fuseTime = nbt.getShort("Fuse", (short)20);
+        this.explosionRadius = nbt.getInt("ExplosionRadius", 200);
+        if (nbt.getBoolean("ignited", false)) {
             this.ignite();
         }
+
     }
 
-    @Override
     public void tick() {
         if (this.isAlive()) {
             this.lastFuseTime = this.currentFuseTime;
@@ -126,46 +134,57 @@ public class MegaCreeperEntity extends CreeperEntity {
         super.tick();
     }
 
-    @Override
     public void setTarget(@Nullable LivingEntity target) {
         if (!(target instanceof GoatEntity)) {
             super.setTarget(target);
         }
     }
 
-    @Override
+    protected SoundEvent getHurtSound(DamageSource source) {
+        return SoundEvents.ENTITY_CREEPER_HURT;
+    }
+
+    protected SoundEvent getDeathSound() {
+        return SoundEvents.ENTITY_CREEPER_DEATH;
+    }
+
     protected void dropEquipment(ServerWorld world, DamageSource source, boolean causedByPlayer) {
         super.dropEquipment(world, source, causedByPlayer);
         Entity entity = source.getAttacker();
-        if (entity != this && entity instanceof CreeperEntity creeperEntity && creeperEntity.shouldDropHead()) {
-            creeperEntity.onHeadDropped();
-            this.dropItem(world, Items.CREEPER_HEAD);
+        if (entity != this && entity instanceof MegaCreeperEntity creeperEntity) {
+            if (creeperEntity.shouldDropHead()) {
+                creeperEntity.onHeadDropped();
+                this.dropItem(world, Items.CREEPER_HEAD);
+            }
         }
+
+    }
+
+    public boolean tryAttack(ServerWorld world, Entity target) {
+        return true;
     }
 
     public boolean isCharged() {
-        return this.dataTracker.get(CHARGED);
+        return (Boolean)this.dataTracker.get(CHARGED);
     }
 
-    public float getClientFuseTime(float timeDelta) {
-        return MathHelper.lerp(timeDelta, (float)this.lastFuseTime, (float)this.currentFuseTime) / (this.fuseTime - 2);
+    public float getLerpedFuseTime(float tickProgress) {
+        return MathHelper.lerp(tickProgress, (float)this.lastFuseTime, (float)this.currentFuseTime) / (float)(this.fuseTime - 2);
     }
 
     public int getFuseSpeed() {
-        return this.dataTracker.get(FUSE_SPEED);
+        return (Integer)this.dataTracker.get(FUSE_SPEED);
     }
 
     public void setFuseSpeed(int fuseSpeed) {
         this.dataTracker.set(FUSE_SPEED, fuseSpeed);
     }
 
-    @Override
     public void onStruckByLightning(ServerWorld world, LightningEntity lightning) {
         super.onStruckByLightning(world, lightning);
         this.dataTracker.set(CHARGED, true);
     }
 
-    @Override
     protected ActionResult interactMob(PlayerEntity player, Hand hand) {
         ItemStack itemStack = player.getStackInHand(hand);
         if (itemStack.isIn(ItemTags.CREEPER_IGNITERS)) {
@@ -187,14 +206,16 @@ public class MegaCreeperEntity extends CreeperEntity {
     }
 
     private void explode() {
-        if (this.getWorld() instanceof ServerWorld serverWorld) {
-            float f = this.isCharged() ? 2.0F : 1.0F;
+        World f = this.getWorld();
+        if (f instanceof ServerWorld serverWorld) {
+            float f0 = this.isCharged() ? 2.0F : 1.0F;
             this.dead = true;
-            serverWorld.createExplosion(this, this.getX(), this.getY(), this.getZ(), this.explosionRadius * f, World.ExplosionSourceType.MOB);
+            serverWorld.createExplosion(this, this.getX(), this.getY(), this.getZ(), (float)this.explosionRadius * f0, World.ExplosionSourceType.MOB);
             this.spawnEffectsCloud();
-            this.onRemoval(serverWorld, Entity.RemovalReason.KILLED);
+            this.onRemoval(serverWorld, RemovalReason.KILLED);
             this.discard();
         }
+
     }
 
     private void spawnEffectsCloud() {
@@ -204,19 +225,21 @@ public class MegaCreeperEntity extends CreeperEntity {
             areaEffectCloudEntity.setRadius(2.5F);
             areaEffectCloudEntity.setRadiusOnUse(-0.5F);
             areaEffectCloudEntity.setWaitTime(10);
-            areaEffectCloudEntity.setDuration(areaEffectCloudEntity.getDuration() / 2);
-            areaEffectCloudEntity.setRadiusGrowth(-areaEffectCloudEntity.getRadius() / areaEffectCloudEntity.getDuration());
+            areaEffectCloudEntity.setDuration(300);
+            areaEffectCloudEntity.setPotionDurationScale(0.25F);
+            areaEffectCloudEntity.setRadiusGrowth(-areaEffectCloudEntity.getRadius() / (float)areaEffectCloudEntity.getDuration());
 
-            for (StatusEffectInstance statusEffectInstance : collection) {
+            for(StatusEffectInstance statusEffectInstance : collection) {
                 areaEffectCloudEntity.addEffect(new StatusEffectInstance(statusEffectInstance));
             }
 
             this.getWorld().spawnEntity(areaEffectCloudEntity);
         }
+
     }
 
     public boolean isIgnited() {
-        return this.dataTracker.get(IGNITED);
+        return (Boolean)this.dataTracker.get(IGNITED);
     }
 
     public void ignite() {
@@ -228,6 +251,12 @@ public class MegaCreeperEntity extends CreeperEntity {
     }
 
     public void onHeadDropped() {
-        this.headsDropped++;
+        ++this.headsDropped;
+    }
+
+    static {
+        FUSE_SPEED = DataTracker.registerData(MegaCreeperEntity.class, TrackedDataHandlerRegistry.INTEGER);
+        CHARGED = DataTracker.registerData(MegaCreeperEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
+        IGNITED = DataTracker.registerData(MegaCreeperEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
     }
 }

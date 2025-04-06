@@ -17,6 +17,7 @@ public class BlazinBlazeTwitchModSounds {
     public static final SoundEvent MAIL_ITEM_USE = registerSound("mail-item-use");
     public static final SoundEvent TADA_SOUND_EFFECT = registerSound("tada-sound-effect");
     public static final SoundEvent THUD_SOUND_EFFECT = registerSound("thud-sound-effect");
+    public static final SoundEvent VOICE_MESSAGE_EFFECT = registerSound("voice-message-effect");
 
     // actual registration of all the custom SoundEvents
     private static SoundEvent registerSound(String id) {

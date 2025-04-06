@@ -37,4 +37,16 @@ public class BlazinBlazeTwitchModComponents {
             Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "mail_farewell"),
             ComponentType.<String>builder().codec(Codec.STRING).build()
     );
+
+    public static final ComponentType<String> VOICE_MESSAGE = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "voice_message"),
+            ComponentType.<String>builder().codec(Codec.STRING).build()
+    );
+
+    public static final ComponentType<String> VOICE_AUTHOR = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "voice_author"),
+            ComponentType.<String>builder().codec(Codec.STRING).build()
+    );
 }

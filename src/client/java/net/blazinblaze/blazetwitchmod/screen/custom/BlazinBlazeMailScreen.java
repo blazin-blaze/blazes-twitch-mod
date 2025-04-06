@@ -2,11 +2,14 @@ package net.blazinblaze.blazetwitchmod.screen.custom;
 
 import com.ibm.icu.text.BidiTransform;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.TextureFormat;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgramKeys;
+import net.minecraft.client.gl.ShaderProgram;
+//import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
@@ -137,9 +140,9 @@ public class BlazinBlazeMailScreen extends Screen {
     public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
         super.renderBackground(context, mouseX, mouseY, delta);
         if(typeVar != null) {
-            RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX);
+            //RenderSystem.setshader();
             RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-            RenderSystem.setShaderTexture(0, MAIL_GUI_TYPES.get(typeVar));
+            RenderSystem.setShaderTexture(0, RenderSystem.getDevice().createTexture(MAIL_GUI_TYPES.get(typeVar).getPath(), TextureFormat.DEPTH32, 256, 171, TextureFormat.DEPTH32.pixelSize()));
 
             int x = (width - 256) / 2;
             int y = (height - 171) / 2;

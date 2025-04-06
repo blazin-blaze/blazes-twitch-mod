@@ -5,6 +5,7 @@ import net.blazinblaze.blazetwitchmod.networking.FollowNotifyS2CPayload;
 import net.blazinblaze.blazetwitchmod.networking.MailScreenS2CPayload;
 import net.blazinblaze.blazetwitchmod.sound.BlazinBlazeTwitchModSounds;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -19,6 +20,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class MailItem extends Item {
 
@@ -27,9 +29,16 @@ public class MailItem extends Item {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+    public void appendTooltip(ItemStack stack, TooltipContext context, TooltipDisplayComponent displayComponent, Consumer<Text> textConsumer, TooltipType type) {
         String author = stack.getOrDefault(BlazinBlazeTwitchModComponents.MAIL_AUTHOR, "test");
-        tooltip.add(Text.translatable("item.blaze-twitch-mod.mail_author.info", author).formatted(Formatting.GOLD));
+        displayComponent.shouldDisplay(BlazinBlazeTwitchModComponents.MAIL_AUTHOR);
+        textConsumer.accept(Text.translatable("item.blaze-twitch-mod.mail_author.info", author).formatted(Formatting.GOLD));
+        //tooltip.add(Text.translatable("item.blaze-twitch-mod.mail_author.info", author).formatted(Formatting.GOLD));
+    }
+
+    @Override
+    public boolean hasGlint(ItemStack stack) {
+        return true;
     }
 
     @Override

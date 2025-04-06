@@ -18,7 +18,7 @@ public class LootCrateModel extends EntityModel<LootCrateRenderState> {
     public static TexturedModelData getTexturedModelData() {
         ModelData modelData = new ModelData();
         ModelPartData modelPartData = modelData.getRoot();
-        ModelPartData bone3 = modelPartData.addChild("bone3", ModelPartBuilder.create().uv(0, 0).cuboid(-8.0F, -16.0F, -8.0F, 16.0F, 16.0F, 16.0F, new Dilation(0.0F)), ModelTransform.pivot(0.0F, 16.0F, 0.0F));
+        ModelPartData bone3 = modelPartData.addChild("bone3", ModelPartBuilder.create().uv(0, 0).cuboid(-8.0F, -16.0F, -8.0F, 16.0F, 16.0F, 16.0F, new Dilation(0.0F)), ModelTransform.origin(0.0F, 16.0F, 0.0F));
 
         ModelPartData bone = modelPartData.addChild("bone", ModelPartBuilder.create().uv(50, 36).cuboid(-7.0F, -4.0F, -5.0F, 2.0F, 2.0F, 2.0F, new Dilation(0.0F))
                 .uv(34, 32).cuboid(-11.0F, -4.0F, -1.0F, 10.0F, 2.0F, 2.0F, new Dilation(0.0F))
@@ -105,6 +105,7 @@ public class LootCrateModel extends EntityModel<LootCrateRenderState> {
 
     @Override
     public void setAngles(LootCrateRenderState state) {
+        super.setAngles(state);
         this.getRootPart().traverse().forEach(ModelPart::resetTransform);
 
         this.animate(state.idleAnimationState, LootCrateAnimations.LOOT_CRATE_IDLE_ANIM, state.age, 1.0F);

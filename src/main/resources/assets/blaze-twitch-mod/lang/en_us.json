@@ -2,6 +2,11 @@
   "entity.blaze-twitch-mod.mega_creeper": "§4§lMega Creeper",
   "entity.blaze-twitch-mod.loot_crate_entity": "§lLoot Crate",
   "entity.blaze-twitch-mod.beddy_entity": "§lBeddy",
+  "entity.blaze-twitch-mod.nuclear_tnt_entity": "§a§lNuclear TNT",
+
+  "entity.blaze-twitch-mod.life_linked_wolf": "§4§lLife-linked Wolf",
+  "entity.blaze-twitch-mod.life_linked_parrot": "§4§lLife-linked Parrot",
+  "entity.blaze-twitch-mod.life_linked_cat": "§4§lLife-linked Cat",
 
   "block.blaze-twitch-mod.nuclear_tnt": "§a§lNuclear TNT",
 
@@ -13,7 +18,9 @@
   "item.blaze-twitch-mod.mail_item_minecraft": "Minecraft Mail Message",
   "item.blaze-twitch-mod.mail_item_error": "Errored Mail Message",
   "item.blaze-twitch-mod.mail_item_starry": "Starry Mail Message",
+  "item.blaze-twitch-mod.voice_message_item": "Voice Message",
   "item.blaze-twitch-mod.blaze_sword": "§c§l§oBlaze Sword",
 
-  "item.blaze-twitch-mod.mail_author.info": "Author: %1$s"
+  "item.blaze-twitch-mod.mail_author.info": "Author: %1$s",
+  "item.blaze-twitch-mod.voice_author.info": "Speaker: %1$s"
 }

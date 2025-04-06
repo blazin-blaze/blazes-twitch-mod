@@ -35,7 +35,7 @@ public class MegaCreeperRenderer extends CreeperEntityRenderer {
 
     public void updateRenderState(MegaCreeperEntity creeperEntity, CreeperEntityRenderState creeperEntityRenderState, float f) {
         super.updateRenderState(creeperEntity, creeperEntityRenderState, f);
-        creeperEntityRenderState.fuseTime = creeperEntity.getClientFuseTime(f);
+        creeperEntityRenderState.fuseTime = creeperEntity.getLerpedFuseTime(f);
         creeperEntityRenderState.charged = creeperEntity.isCharged();
     }
 }

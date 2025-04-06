@@ -3,7 +3,8 @@
 	"package": "net.blazinblaze.blazetwitchmod.mixin.client",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-		"ExampleClientMixin"
+		"ExampleClientMixin",
+		"NarrateTTSMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

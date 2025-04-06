@@ -5,7 +5,8 @@
 	"mixins": [
 		"ExampleMixin",
 		"CatEntityAccess",
-		"WolfEntityAccess"
+		"WolfEntityAccess",
+		"ParrotEntityAccess"
 	],
 	"injectors": {
 		"defaultRequire": 1
