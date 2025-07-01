@@ -2,26 +2,43 @@ package net.blazinblaze.blazetwitchmod.entity.custom;
 
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.minecraft.entity.AnimationState;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.Leashable;
 import net.minecraft.entity.ai.goal.*;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.data.DataTracker;
+import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
+import net.minecraft.text.Text;
 import net.minecraft.world.World;
 
 public class BeddyEntity extends PathAwareEntity implements Leashable {
+    private static final TrackedData<Integer> DESTRUCTION_TIMER = DataTracker.registerData(BeddyEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private static final TrackedData<String> USER = DataTracker.registerData(BeddyEntity.class, TrackedDataHandlerRegistry.STRING);
     public final AnimationState idleAnimationState = new AnimationState();
     private int idleAnimationTimeout = 0;
 
+    private Text label = Text.literal("§8§lBeddy");
+
     public BeddyEntity(World world) {
         this(BlazinBlazeTwitchModEntities.BEDDY_ENTITY, world);
+        this.setCustomNameVisible(true);
     }
 
     public BeddyEntity(EntityType<? extends PathAwareEntity> entityType, World world) {
         super(entityType, world);
+        this.setCustomNameVisible(true);
     }
 
     @Override
@@ -55,5 +72,82 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
         if(this.getWorld().isClient()) {
             setupAnimationStates();
         }
+
+        int destructionTimer = getDestructionTimer();
+
+        if(destructionTimer >= 1200) {
+            Entity leashedEntity = this.getLeashHolder();
+            if(leashedEntity != null) {
+                if(leashedEntity instanceof PlayerEntity plr) {
+                    plr.removeStatusEffect(StatusEffects.SLOWNESS);
+                    plr.removeStatusEffect(StatusEffects.BLINDNESS);
+                }
+            }
+            this.remove(RemovalReason.DISCARDED);
+        } else {
+            setDestructionTimer(destructionTimer + 1);
+            destructionTimer = getDestructionTimer();
+            double timeToSubstract = Math.floor((double) destructionTimer / 20);
+            double time = (60 - timeToSubstract);
+            label = Text.literal(String.format("§8§l%s's Beddy - §r", getUser()) + String.format(String.valueOf(time)));
+            Entity leashedEntity = this.getLeashHolder();
+            if(leashedEntity != null) {
+                if(leashedEntity instanceof PlayerEntity plr) {
+                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 255));
+                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 100));
+                    this.attachLeash(plr, true);
+                }
+            }
+        }
+    }
+
+    public int getDestructionTimer() {
+        return this.dataTracker.get(DESTRUCTION_TIMER);
+    }
+
+    public void setDestructionTimer(int destructionProgress) {
+        this.dataTracker.set(DESTRUCTION_TIMER, destructionProgress);
+    }
+
+    public String getUser() {
+        return this.dataTracker.get(USER);
+    }
+
+    public void setUser(String user) {
+        this.dataTracker.set(USER, user);
+    }
+
+    @Override
+    protected void initDataTracker(DataTracker.Builder builder) {
+        super.initDataTracker(builder);
+        builder.add(DESTRUCTION_TIMER, 0);
+        builder.add(USER, "test");
+    }
+
+    @Override
+    protected void writeCustomData(WriteView nbt) {
+        nbt.putInt("destruction_timer", getDestructionTimer());
+        nbt.putString("user", getUser());
+    }
+
+    @Override
+    public Text getDisplayName() {
+        return label;
+    }
+
+    @Override
+    public boolean shouldRenderName() {
+        return true;
+    }
+
+    @Override
+    protected void readCustomData(ReadView nbt) {
+        setDestructionTimer(nbt.getInt("destruction_timer", 0));
+        setUser(nbt.getString("user", "test"));
+    }
+
+    @Override
+    public boolean damage(ServerWorld world, DamageSource source, float amount) {
+        return false;
     }
 }

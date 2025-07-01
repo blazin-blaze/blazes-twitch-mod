@@ -47,7 +47,8 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
 	modImplementation "com.github.twitch4j:twitch4j-fabric:1.24.0+1.10.0"
-	implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.4.12'
+	implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
+	modImplementation "io.github.iprodigy.bttv:bttv4j-api:1.0.0"
 }
 
 processResources {

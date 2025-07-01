@@ -1,8 +1,10 @@
 package net.blazinblaze.blazetwitchmod.entity.model;
 
 import net.blazinblaze.blazetwitchmod.entity.animation.BeddyAnimations;
+import net.blazinblaze.blazetwitchmod.entity.animation.LootCrateAnimations;
 import net.blazinblaze.blazetwitchmod.entity.state.BeddyRenderState;
 import net.minecraft.client.model.*;
+import net.minecraft.client.render.entity.animation.Animation;
 import net.minecraft.client.render.entity.model.EntityModel;
 
 public class BeddyEntityModel extends EntityModel<BeddyRenderState> {
@@ -11,12 +13,17 @@ public class BeddyEntityModel extends EntityModel<BeddyRenderState> {
     private final ModelPart bone2;
     private final ModelPart bone4;
 
+    private final Animation idlingAnimation;
+    private final Animation walkingAnimation;
+
     public BeddyEntityModel(ModelPart root) {
         super(root);
         this.bone3 = root.getChild("bone3");
         this.bone = root.getChild("bone");
         this.bone2 = root.getChild("bone2");
         this.bone4 = root.getChild("bone4");
+        this.idlingAnimation = BeddyAnimations.BEDDY_IDLE.createAnimation(root);
+        this.walkingAnimation = BeddyAnimations.BEDDY_WALKING.createAnimation(root);
     }
 
     public static TexturedModelData getTexturedModelData() {
@@ -40,8 +47,8 @@ public class BeddyEntityModel extends EntityModel<BeddyRenderState> {
         super.setAngles(state);
         this.getRootPart().traverse().forEach(ModelPart::resetTransform);
 
-        this.animateWalking(BeddyAnimations.BEDDY_WALKING, state.limbSwingAnimationProgress, state.limbSwingAmplitude, 2f, 2.5f);
-        this.animate(state.idleAnimationState, BeddyAnimations.BEDDY_IDLE, state.age, 1f);
+        this.walkingAnimation.applyWalking(state.limbSwingAnimationProgress, state.limbSwingAmplitude, 2f, 2.5f);
+        this.idlingAnimation.apply(state.idleAnimationState, state.age, 1f);
     }
 
 }

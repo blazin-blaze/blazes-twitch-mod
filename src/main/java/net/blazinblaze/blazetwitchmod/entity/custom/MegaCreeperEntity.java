@@ -23,6 +23,8 @@ import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.MathHelper;
@@ -88,16 +90,16 @@ public class MegaCreeperEntity extends CreeperEntity {
         builder.add(IGNITED, false);
     }
 
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
+    public void writeCustomData(WriteView nbt) {
+        super.writeCustomData(nbt);
         nbt.putBoolean("powered", this.isCharged());
         nbt.putShort("Fuse", (short)this.fuseTime);
         nbt.putInt("ExplosionRadius", this.explosionRadius);
         nbt.putBoolean("ignited", this.isIgnited());
     }
 
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
+    public void readCustomData(ReadView nbt) {
+        super.readCustomData(nbt);
         this.dataTracker.set(CHARGED, nbt.getBoolean("powered", false));
         this.fuseTime = nbt.getShort("Fuse", (short)20);
         this.explosionRadius = nbt.getInt("ExplosionRadius", 200);

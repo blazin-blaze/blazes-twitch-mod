@@ -1,13 +1,17 @@
 package net.blazinblaze.blazetwitchmod.screen.custom;
 
 import com.ibm.icu.text.BidiTransform;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.textures.TextureFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gl.ShaderProgram;
 //import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.gui.DrawContext;
@@ -15,9 +19,11 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.texture.GlTexture;
 import net.minecraft.client.toast.SystemToast;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.Items;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.text.OrderedText;
@@ -99,12 +105,14 @@ public class BlazinBlazeMailScreen extends Screen {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        //context.drawItem(Items.ACACIA_LOG.getDefaultStack(), 200, 200);
         super.render(context, mouseX, mouseY, delta);
 
         // Minecraft doesn't have a "label" widget, so we'll have to draw our own text.
         // We'll subtract the font height from the Y position to make the text appear above the button.
         // Subtracting an extra 10 pixels will give the text some padding.
         // textRenderer, text, x, y, color, hasShadow
+
         int x = (width - 240) / 2;
         int y = (height - 110) / 2;
 
@@ -141,13 +149,20 @@ public class BlazinBlazeMailScreen extends Screen {
         super.renderBackground(context, mouseX, mouseY, delta);
         if(typeVar != null) {
             //RenderSystem.setshader();
-            RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-            RenderSystem.setShaderTexture(0, RenderSystem.getDevice().createTexture(MAIL_GUI_TYPES.get(typeVar).getPath(), TextureFormat.DEPTH32, 256, 171, TextureFormat.DEPTH32.pixelSize()));
+            //RenderSystem.setShaderTexture(0,
+                    //RenderSystem.getDevice().createTextureView(
+                            //RenderSystem.getDevice().createTexture(MAIL_GUI_TYPES.get(typeVar).getPath(), GlTexture.USAGE_TEXTURE_BINDING, TextureFormat.DEPTH32, 256, 171, TextureFormat.DEPTH32.pixelSize(), this.client.options.getMipmapLevels().getValue())
+                    //));
 
             int x = (width - 256) / 2;
             int y = (height - 171) / 2;
 
-            context.drawTexture(RenderLayer::getGuiTextured, MAIL_GUI_TYPES.get(typeVar), x, y, 0, 0, 256, 171, 256, 171);
+            context.drawTexture(RenderPipelines.GUI_TEXTURED, MAIL_GUI_TYPES.get(typeVar), x, y, 0, 0, 256, 171, 256, 171);
         }
+    }
+
+    @Override
+    public boolean shouldPause() {
+        return false;
     }
 }

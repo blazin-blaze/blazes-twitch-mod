@@ -15,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.w3c.dom.Text;
 
 @Mixin(NarratorManager.class)
 public abstract class NarrateTTSMixin {
@@ -24,14 +25,14 @@ public abstract class NarrateTTSMixin {
 
     @Shadow protected abstract void say(String text, boolean interrupt);
 
-    @Inject(method = "narrate(Ljava/lang/String;)V", at = @At("HEAD"), cancellable = true)
-    public void narrateWithoutActive(String text, CallbackInfo ci) {
-        if(this.getNarratorMode().shouldNarrateSystem() && !text.isEmpty() && this.narrator.active()) {
+    @Inject(method = "narrate(Lnet/minecraft/text/Text;)V", at = @At("HEAD"), cancellable = true)
+    public void narrateWithoutActive(net.minecraft.text.Text message, CallbackInfo ci) {
+        if(this.getNarratorMode().shouldNarrateSystem() && !message.getString().isEmpty() && this.narrator.active()) {
             ci.cancel();
         }else {
-            if(text.startsWith("[TTS]")) {
+            if(message.getString().startsWith("[TTS]")) {
                 this.narrator.clear();
-                this.say(text.substring("[TTS]".length()), true);
+                this.say(message.getString().substring("[TTS]".length()), true);
             }else {
                 ci.cancel();
             }

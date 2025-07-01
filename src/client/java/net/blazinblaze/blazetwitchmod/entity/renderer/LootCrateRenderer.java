@@ -37,6 +37,7 @@ public class LootCrateRenderer extends EntityRenderer<LootCrateEntity, LootCrate
     @Override
     public void render(LootCrateRenderState state, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light) {
         LOOT_CRATE_MODEL.render(matrices, vertexConsumers.getBuffer(RenderLayer.getEntitySolid(LOOT_CRATE_TEXTURE)), light, OverlayTexture.DEFAULT_UV);
+        LOOT_CRATE_MODEL.setAngles(state);
 
         if (state.displayName != null) {
             this.renderLabelIfPresent(state, state.displayName, matrices, vertexConsumers, light);

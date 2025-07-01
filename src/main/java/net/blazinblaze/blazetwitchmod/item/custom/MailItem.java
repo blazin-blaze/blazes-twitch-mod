@@ -50,9 +50,9 @@ public class MailItem extends Item {
             return ActionResult.PASS;
         }
 
+        user.playSoundToPlayer(BlazinBlazeTwitchModSounds.MAIL_ITEM_USE, SoundCategory.NEUTRAL, 1.0F, 1.0F);
         MailScreenS2CPayload payload = new MailScreenS2CPayload(stack.getOrDefault(BlazinBlazeTwitchModComponents.MAIL_MESSAGE, "test"), stack.getOrDefault(BlazinBlazeTwitchModComponents.MAIL_TYPE, "default"),stack.getOrDefault(BlazinBlazeTwitchModComponents.MAIL_AUTHOR, "test"),stack.getOrDefault(BlazinBlazeTwitchModComponents.MAIL_FAREWELL, "Farewell, "));
         ServerPlayNetworking.send((ServerPlayerEntity) user, payload);
-        user.playSoundToPlayer(BlazinBlazeTwitchModSounds.MAIL_ITEM_USE, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
         return ActionResult.SUCCESS;
     }

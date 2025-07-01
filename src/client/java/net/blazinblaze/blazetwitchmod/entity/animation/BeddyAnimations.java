@@ -1,12 +1,9 @@
 package net.blazinblaze.blazetwitchmod.entity.animation;
 
-import net.minecraft.client.render.entity.animation.Animation;
-import net.minecraft.client.render.entity.animation.AnimationHelper;
-import net.minecraft.client.render.entity.animation.Keyframe;
-import net.minecraft.client.render.entity.animation.Transformation;
+import net.minecraft.client.render.entity.animation.*;
 
 public class BeddyAnimations {
-    public static final Animation BEDDY_WALKING = Animation.Builder.create(2.0F).looping()
+    public static final AnimationDefinition BEDDY_WALKING = AnimationDefinition.Builder.create(2.0F).looping()
             .addBoneAnimation("bone", new Transformation(Transformation.Targets.MOVE_ORIGIN,
                     new Keyframe(0.0F, AnimationHelper.createTranslationalVector(0.0F, 0.0F, -2.0F), Transformation.Interpolations.LINEAR),
                     new Keyframe(0.25F, AnimationHelper.createTranslationalVector(0.0F, 0.0F, 0.0F), Transformation.Interpolations.LINEAR),
@@ -45,7 +42,7 @@ public class BeddyAnimations {
             ))
             .build();
 
-    public static final Animation BEDDY_IDLE = Animation.Builder.create(2.0F)
+    public static final AnimationDefinition BEDDY_IDLE = AnimationDefinition.Builder.create(2.0F)
             .addBoneAnimation("bone3", new Transformation(Transformation.Targets.MOVE_ORIGIN,
                     new Keyframe(0.0F, AnimationHelper.createTranslationalVector(0.0F, 0.0F, 0.0F), Transformation.Interpolations.LINEAR),
                     new Keyframe(0.5F, AnimationHelper.createTranslationalVector(0.0F, -0.4F, 0.0F), Transformation.Interpolations.LINEAR),

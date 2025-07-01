@@ -19,6 +19,8 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.RegistryOps;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.BlockView;
@@ -124,23 +126,21 @@ public class NuclearTntEntity extends TntEntity {
     }
 
     @Override
-    protected void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
-        RegistryOps<NbtElement> registryOps = this.getRegistryManager().getOps(NbtOps.INSTANCE);
+    protected void writeCustomData(WriteView nbt) {
+        super.writeCustomData(nbt);
         nbt.putShort("fuse", (short)this.getFuse());
-        nbt.put("block_state", BlockState.CODEC, registryOps, this.getBlockState());
+        nbt.put("block_state", BlockState.CODEC, this.getBlockState());
         if (this.explosionPower != 200.0F) {
             nbt.putFloat("explosion_power", this.explosionPower);
         }
-
     }
 
     @Override
-    protected void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
+    protected void readCustomData(ReadView nbt) {
+        super.readCustomData(nbt);
         RegistryOps<NbtElement> registryOps = this.getRegistryManager().getOps(NbtOps.INSTANCE);
         this.setFuse(nbt.getShort("fuse", (short)80));
-        this.setBlockState((BlockState)nbt.get("block_state", BlockState.CODEC, registryOps).orElse(DEFAULT_BLOCK_STATE));
+        this.setBlockState((BlockState)nbt.read("block_state", BlockState.CODEC).orElse(DEFAULT_BLOCK_STATE));
         this.explosionPower = MathHelper.clamp(nbt.getFloat("explosion_power", 200.0F), 0.0F, 128.0F);
     }
 

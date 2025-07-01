@@ -61,6 +61,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.storage.ReadView;
+import net.minecraft.storage.WriteView;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -253,12 +255,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
     }
 
     public static boolean canCollide(Entity entity, Entity other) {
-        return (other.isCollidable() || other.isPushable()) && !entity.isConnectedThroughVehicle(other);
-    }
-
-    @Override
-    public boolean isCollidable() {
-        return true;
+        return !entity.isConnectedThroughVehicle(other);
     }
 
     @Override
@@ -448,7 +445,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
     }
 
     @Override
-    protected void writeCustomDataToNbt(NbtCompound nbt) {
+    protected void writeCustomData(WriteView nbt) {
         nbt.putInt("destruction_timer", getDestructionTimer());
         nbt.putBoolean("has_touched_ground", getHasTouchedGround());
     }
@@ -464,9 +461,9 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
     }
 
     @Override
-    protected void readCustomDataFromNbt(NbtCompound nbt) {
-        setDestructionTimer(nbt.getInt("destruction_timer").orElse(0));
-        setHasTouchedGround(nbt.getBoolean("has_touched_ground").orElse(false));
+    protected void readCustomData(ReadView nbt) {
+        setDestructionTimer(nbt.getInt("destruction_timer", 0));
+        setHasTouchedGround(nbt.getBoolean("has_touched_ground", false));
     }
 
     //private long getLootTableSeed() {

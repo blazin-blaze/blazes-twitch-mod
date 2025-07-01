@@ -52,7 +52,7 @@ public class VoiceMessageItem extends Item {
         ServerPlayNetworking.send((ServerPlayerEntity) user, payload);
         user.playSoundToPlayer(BlazinBlazeTwitchModSounds.VOICE_MESSAGE_EFFECT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
-        OverlayMessageS2CPayload payload2 = new OverlayMessageS2CPayload(stack.getOrDefault(BlazinBlazeTwitchModComponents.VOICE_MESSAGE, "test"));
+        OverlayMessageS2CPayload payload2 = new OverlayMessageS2CPayload(String.format("§l[%s's VC]§r ", stack.getOrDefault(BlazinBlazeTwitchModComponents.VOICE_AUTHOR, "test")) + stack.getOrDefault(BlazinBlazeTwitchModComponents.VOICE_MESSAGE, "test"));
         ServerPlayNetworking.send((ServerPlayerEntity) user, payload2);
 
         return ActionResult.SUCCESS;
