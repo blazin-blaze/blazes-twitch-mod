@@ -61,6 +61,7 @@ public class BlazinBlazeTwitchModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.LIFE_LINKED_CAT_ENTITY, LifeLinkedCatRenderer::new);
 		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.LIFE_LINKED_WOLF_ENTITY, LifeLinkedWolfRenderer::new);
 		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.LIFE_LINKED_PARROT_ENTITY, LifeLinkedParrotRenderer::new);
+		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.LIFE_LINKED_FISH_ENTITY, LifeLinkedFishRenderer::new);
 
 		//GIFTick.register();
 		CloseEmoteTimer.register();

@@ -24,9 +24,11 @@ import net.blazinblaze.blazetwitchmod.util.SoundMessageTimer;
 import net.fabricmc.api.ModInitializer;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.SpawnReason;
@@ -63,6 +65,7 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 	public static Collection<io.github.iprodigy.bttv.common.Emote> globalEmotes;
 	public static Map<User, List<Emote>> channelEmotes = new HashMap<>();
 	public static Map<User, List<Emote>> sharedEmotes = new HashMap<>();
+	public static boolean hasLoadedClient = false;
 
 	@Override
 	public void onInitialize() {
@@ -118,6 +121,9 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 					LOGGER.warn("Could not find BetterTTV user for the specified ID.");
 				}
 			}
+			if(client != null) {
+				hasLoadedClient = true;
+			}
 		}else {
 			LOGGER.error("ClientID, ClientName, and/or ClientSecret in config file is blank/null.\n" +
 					"Please check the config file and fill in this information for the mod to work correctly.");
@@ -138,6 +144,12 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 
 		ServerLifecycleEvents.SERVER_STOPPED.register((server -> {
 			serverRef = null;
+		}));
+
+		ServerPlayerEvents.JOIN.register((player -> {
+			if(!hasLoadedClient) {
+				player.sendMessage(Text.of("§5§l[BTM]§r A connection to your Twitch channel has not yet been established. Please confirm you have correctly set up the config file with your client ID, client secret, channel token, and channel name. Once done, restart Minecraft."));
+			}
 		}));
 
 		//ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {

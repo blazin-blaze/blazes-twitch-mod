@@ -12,10 +12,7 @@ import io.github.iprodigy.bttv.common.Emote;
 import io.github.iprodigy.bttv.common.Provider;
 import net.blazinblaze.blazetwitchmod.component.BlazinBlazeTwitchModComponents;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
-import net.blazinblaze.blazetwitchmod.entity.custom.BeddyEntity;
-import net.blazinblaze.blazetwitchmod.entity.custom.LifeLinkedCatEntity;
-import net.blazinblaze.blazetwitchmod.entity.custom.LifeLinkedParrotEntity;
-import net.blazinblaze.blazetwitchmod.entity.custom.LifeLinkedWolfEntity;
+import net.blazinblaze.blazetwitchmod.entity.custom.*;
 import net.blazinblaze.blazetwitchmod.item.BlazinBlazeTwitchModItems;
 import net.blazinblaze.blazetwitchmod.mixin.CatEntityAccess;
 import net.blazinblaze.blazetwitchmod.mixin.ParrotEntityAccess;
@@ -100,7 +97,8 @@ public class BlazinBlazeTwitchModEvent {
             Map.entry("shulker", new SpawnableMob(EntityType.SHULKER, 0.6)),
             Map.entry("silverfish", new SpawnableMob(EntityType.SILVERFISH, 0.7)),
             Map.entry("vindicator", new SpawnableMob(EntityType.VINDICATOR, 0.5)),
-            Map.entry("villager", new SpawnableMob(EntityType.VILLAGER, 0.7)));
+            Map.entry("villager", new SpawnableMob(EntityType.VILLAGER, 0.7)),
+            Map.entry("fish", new SpawnableMob(EntityType.SALMON, 0.7)));
     private static final Map<String, String> POTION_COLORS = Map.ofEntries(
             Map.entry("poison", "§2§l"),
             Map.entry("weakness", "§7§l"),
@@ -517,6 +515,15 @@ public class BlazinBlazeTwitchModEvent {
                                 } else {
                                     entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                 }
+                            }else if(lowerNpcName2.equals("fish")) {
+                                if (ThreadLocalRandom.current().nextDouble() < .05) {
+                                    entity = BlazinBlazeTwitchModEntities.LIFE_LINKED_FISH_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                    ((LifeLinkedFishEntity)entity).setOwnerUUID(serverPlayer.getUuidAsString());
+                                    serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
+                                    broadcast("§5§l[BTM]§r §d§lEntity mutated!", serverPlayer);
+                                } else {
+                                    entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                }
                             }else {
                                 entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                             }
@@ -527,14 +534,22 @@ public class BlazinBlazeTwitchModEvent {
                                     String potionName = rndmPotion.value().getName().getString().toUpperCase();
                                     ((LivingEntity) entity).addStatusEffect(new StatusEffectInstance(rndmPotion, 50000, 2, true, true, true));
                                     String potionColor = POTION_COLORS.get(potionName.toLowerCase());
-                                    entity.setCustomName(Text.literal(String.format("%s§o[%s]§r %s's %s", potionColor, potionName, username, WordUtils.capitalize(lowerNpcName2))));
+                                    if(entity instanceof LifeLinkedFishEntity) {
+                                        entity.setCustomName(Text.literal(String.format("%s§o[%s]§r §4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's %s", potionColor, potionName, username, WordUtils.capitalize(lowerNpcName2))));
+                                    }else {
+                                        entity.setCustomName(Text.literal(String.format("%s§o[%s]§r %s's %s", potionColor, potionName, username, WordUtils.capitalize(lowerNpcName2))));
+                                    }
                                     OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload(potionColor + "ENTITY SPAWNED WITH " + potionName + "!");
                                     ServerPlayNetworking.send(serverPlayer, payload);
                                     serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.NEUTRAL, 1.0F, 0.5F);
                                     broadcast(String.format("§5§l[BTM]§r %s%s just spawned in a %s!", potionColor, event.getUser().getName(), lowerNpcName2), serverPlayer);
                                 }
                             }else {
-                                entity.setCustomName(Text.literal(String.format("%s's %s", username, WordUtils.capitalize(lowerNpcName2))));
+                                if(entity instanceof LifeLinkedFishEntity) {
+                                    entity.setCustomName(Text.literal(String.format("§4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's %s", username, WordUtils.capitalize(lowerNpcName2))));
+                                }else {
+                                    entity.setCustomName(Text.literal(String.format("%s's %s", username, WordUtils.capitalize(lowerNpcName2))));
+                                }
                                 OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§f§lENTITY SPAWNED!");
                                 ServerPlayNetworking.send(serverPlayer, payload);
                                 serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.NEUTRAL, 1.0F, 1.0F);
