@@ -14,6 +14,7 @@ import io.github.iprodigy.bttv.common.Emote;
 import io.github.iprodigy.bttv.common.Provider;
 import net.blazinblaze.blazetwitchmod.block.BlazinBlazeTwitchModBlocks;
 import net.blazinblaze.blazetwitchmod.config.BlazinBlazeConfig;
+import net.blazinblaze.blazetwitchmod.effect.ImmunityShieldEffect;
 import net.blazinblaze.blazetwitchmod.effect.RandomTeleportEffect;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.blazinblaze.blazetwitchmod.entity.custom.MegaCreeperEntity;
@@ -33,6 +34,7 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRe
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.entity.effect.StatusEffectUtil;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.Registries;
@@ -58,13 +60,16 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 	public static final RegistryEntry<StatusEffect> RANDOM_TELEPORT =
 			Registry.registerReference(Registries.STATUS_EFFECT, Identifier.of(MOD_ID, "random_teleport"), new RandomTeleportEffect());
 
+	public static final RegistryEntry<StatusEffect> IMMUNITY_SHIELD_EFFECT =
+			Registry.registerReference(Registries.STATUS_EFFECT, Identifier.of(MOD_ID, "immunity_shield_effect"), new ImmunityShieldEffect());
+
 	private TwitchClient client;
 
 	public static MinecraftServer serverRef;
 	public static BetterTTV bAPI;
 	public static Collection<io.github.iprodigy.bttv.common.Emote> globalEmotes;
-	public static Map<User, List<Emote>> channelEmotes = new HashMap<>();
-	public static Map<User, List<Emote>> sharedEmotes = new HashMap<>();
+	public static Map<String, List<Emote>> channelEmotes = new HashMap<>();
+	public static Map<String, List<Emote>> sharedEmotes = new HashMap<>();
 	public static boolean hasLoadedClient = false;
 
 	@Override
@@ -115,8 +120,8 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 			for(com.github.twitch4j.helix.domain.User user : usersList) {
 				try {
 					User userttv = bAPI.getUser(Provider.TWITCH, user.getId());
-					channelEmotes.put(userttv, userttv.channelEmotes());
-					sharedEmotes.put(userttv, userttv.sharedEmotes());
+					channelEmotes.put(user.getId(), userttv.channelEmotes());
+					sharedEmotes.put(user.getId(), userttv.sharedEmotes());
 				}catch(UnsupportedOperationException e) {
 					LOGGER.warn("Could not find BetterTTV user for the specified ID.");
 				}

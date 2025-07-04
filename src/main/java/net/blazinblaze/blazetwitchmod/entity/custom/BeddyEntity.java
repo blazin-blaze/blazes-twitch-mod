@@ -1,6 +1,8 @@
 package net.blazinblaze.blazetwitchmod.entity.custom;
 
+import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.entity.AnimationState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -17,15 +19,21 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.storage.ReadView;
 import net.minecraft.storage.WriteView;
 import net.minecraft.text.Text;
 import net.minecraft.world.World;
 
+import java.util.UUID;
+
 public class BeddyEntity extends PathAwareEntity implements Leashable {
     private static final TrackedData<Integer> DESTRUCTION_TIMER = DataTracker.registerData(BeddyEntity.class, TrackedDataHandlerRegistry.INTEGER);
     private static final TrackedData<String> USER = DataTracker.registerData(BeddyEntity.class, TrackedDataHandlerRegistry.STRING);
+    private static final TrackedData<String> UUID = DataTracker.registerData(BeddyEntity.class, TrackedDataHandlerRegistry.STRING);
     public final AnimationState idleAnimationState = new AnimationState();
     private int idleAnimationTimeout = 0;
 
@@ -93,9 +101,20 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
             Entity leashedEntity = this.getLeashHolder();
             if(leashedEntity != null) {
                 if(leashedEntity instanceof PlayerEntity plr) {
-                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 100, 255));
-                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 100));
+                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 20*getDestructionTimer(), 255));
+                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 20*getDestructionTimer()));
                     this.attachLeash(plr, true);
+                }
+            }else {
+                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+                if(server != null) {
+                    PlayerManager manager = server.getPlayerManager();
+                    ServerPlayerEntity player = manager.getPlayer(java.util.UUID.fromString(getUUID()));
+                    if(player != null && !player.isDisconnected()) {
+                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 20*getDestructionTimer(), 255));
+                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 20*getDestructionTimer()));
+                        this.attachLeash(player, true);
+                    }
                 }
             }
         }
@@ -117,17 +136,27 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
         this.dataTracker.set(USER, user);
     }
 
+    public String getUUID() {
+        return this.dataTracker.get(UUID);
+    }
+
+    public void setUUID(String user) {
+        this.dataTracker.set(UUID, user);
+    }
+
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {
         super.initDataTracker(builder);
         builder.add(DESTRUCTION_TIMER, 0);
         builder.add(USER, "test");
+        builder.add(UUID, "test");
     }
 
     @Override
     protected void writeCustomData(WriteView nbt) {
         nbt.putInt("destruction_timer", getDestructionTimer());
         nbt.putString("user", getUser());
+        nbt.putString("uuid", getUUID());
     }
 
     @Override
@@ -144,6 +173,7 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
     protected void readCustomData(ReadView nbt) {
         setDestructionTimer(nbt.getInt("destruction_timer", 0));
         setUser(nbt.getString("user", "test"));
+        setUUID(nbt.getString("uuid", "test"));
     }
 
     @Override

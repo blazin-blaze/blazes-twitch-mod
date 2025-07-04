@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "blaze-twitch-mod:item/immunity_shield_item"
+  }
+}
