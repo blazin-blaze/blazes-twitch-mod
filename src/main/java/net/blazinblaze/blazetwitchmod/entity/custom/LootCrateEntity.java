@@ -152,7 +152,10 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
             //Map.entry(BlazinBlazeTwitchModItems.BLAZE_SWORD.getDefaultStack(), new ItemRarity(0.001, false, true, "tool")),
             Map.entry(BlazinBlazeTwitchModBlocks.NUCLEAR_TNT.asItem().getDefaultStack(), new ItemRarity(0.1, true, false, "none")),
             Map.entry(Items.BOW.getDefaultStack(), new ItemRarity(0.5, false, true, "bow")),
-            Map.entry(Items.CROSSBOW.getDefaultStack(), new ItemRarity(0.5, false, true, "crossbow")));
+            Map.entry(Items.CROSSBOW.getDefaultStack(), new ItemRarity(0.5, false, true, "crossbow")),
+            Map.entry(BlazinBlazeTwitchModItems.IMMUNITY_SHIELD_ITEM.getDefaultStack(), new ItemRarity(0.001, false, false, "none")),
+            Map.entry(BlazinBlazeTwitchModItems.FAKE_EYE_OF_ENDER.getDefaultStack(), new ItemRarity(0.1, true, false, "none")),
+            Map.entry(Items.ENDER_EYE.getDefaultStack(), new ItemRarity(0.1, true, false, "none")));
 
     private static final ArrayList<RegistryKey<Enchantment>> toolEnchantments = new ArrayList<RegistryKey<Enchantment>>();
     private static final ArrayList<RegistryKey<Enchantment>> bowEnchantments = new ArrayList<RegistryKey<Enchantment>>();
@@ -251,11 +254,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
 
     @Override
     public boolean collidesWith(Entity other) {
-        return canCollide(this, other);
-    }
-
-    public static boolean canCollide(Entity entity, Entity other) {
-        return !entity.isConnectedThroughVehicle(other);
+        return true;
     }
 
     @Override

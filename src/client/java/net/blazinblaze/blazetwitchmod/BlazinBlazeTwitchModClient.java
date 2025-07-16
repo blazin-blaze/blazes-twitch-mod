@@ -1,46 +1,26 @@
 package net.blazinblaze.blazetwitchmod;
 
-import com.mojang.text2speech.Narrator;
-import com.mojang.text2speech.NarratorWindows;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
-import net.blazinblaze.blazetwitchmod.entity.custom.LifeLinkedCatEntity;
-import net.blazinblaze.blazetwitchmod.entity.custom.LifeLinkedParrotEntity;
 import net.blazinblaze.blazetwitchmod.entity.model.BlazinBlazeModelLayers;
 import net.blazinblaze.blazetwitchmod.entity.renderer.*;
-import net.blazinblaze.blazetwitchmod.mixin.client.NarrateTTSMixin;
 import net.blazinblaze.blazetwitchmod.networking.*;
 import net.blazinblaze.blazetwitchmod.screen.custom.BlazinBlazeEmoteHUD;
-import net.blazinblaze.blazetwitchmod.screen.custom.BlazinBlazeEmoteScreen;
 import net.blazinblaze.blazetwitchmod.screen.custom.BlazinBlazeMailScreen;
+import net.blazinblaze.blazetwitchmod.screen.custom.BlazinBlazeMultiplierHUD;
 import net.blazinblaze.blazetwitchmod.util.CloseEmoteTimer;
 import net.blazinblaze.blazetwitchmod.util.EmoteTextures;
-import net.blazinblaze.blazetwitchmod.util.GIFTick;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.minecraft.client.gui.hud.InGameHud;
-import net.minecraft.client.gui.screen.narration.Narration;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.screen.narration.NarrationPart;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.NarratorMode;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.toast.SystemToast;
-import net.minecraft.client.util.NarratorManager;
-import net.minecraft.client.world.ClientWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -63,9 +43,9 @@ public class BlazinBlazeTwitchModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.LIFE_LINKED_PARROT_ENTITY, LifeLinkedParrotRenderer::new);
 		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.LIFE_LINKED_FISH_ENTITY, LifeLinkedFishRenderer::new);
 
-		//GIFTick.register();
 		CloseEmoteTimer.register();
 		HudElementRegistry.addFirst(Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "emote-hud"), BlazinBlazeEmoteHUD.getInstance());
+		HudElementRegistry.addFirst(Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "multiplier-hud"), BlazinBlazeMultiplierHUD.getInstance());
 
 		ClientPlayNetworking.registerGlobalReceiver(FollowNotifyS2CPayload.ID, (payload, context) -> {
 			context.client().getToastManager().add(
@@ -100,6 +80,20 @@ public class BlazinBlazeTwitchModClient implements ClientModInitializer {
 			//context.client().getNarratorManager().narrate(String.format("%s says: %s", payload.author(), payload.message()));
 		});
 
+		ClientPlayNetworking.registerGlobalReceiver(FullscreenS2CPayload.ID, (payload, context) -> {
+			InGameHud hud = context.client().inGameHud;
+			hud.setOverlayMessage(Text.literal(payload.message()), true);
+			context.client().getWindow().toggleFullscreen();
+			if(!context.client().getWindow().isFullscreen()) {
+				context.client().getWindow().setWindowedSize(100, 100);
+			}
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(CloseS2CPayload.ID, (payload, context) -> {
+			InGameHud hud = context.client().inGameHud;
+			hud.setOverlayMessage(Text.literal(payload.message()), true);
+			context.client().getWindow().close();
+		});
 
 		ClientLifecycleEvents.CLIENT_STOPPING.register((client -> {
 			BlazinBlazeEmoteHUD.getInstance().closeAllEmotes();

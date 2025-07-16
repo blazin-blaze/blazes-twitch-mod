@@ -95,8 +95,8 @@ public class BlazinBlazeEmoteHUD implements HudElement {
 
     @Override
     public void render(DrawContext context, RenderTickCounter tickCounter) {
-        maxWidth = MinecraftClient.getInstance().getWindow().getWidth();
-        maxHeight = MinecraftClient.getInstance().getWindow().getHeight();
+        maxWidth = context.getScaledWindowWidth();
+        maxHeight = context.getScaledWindowHeight();
         currentEmotes.forEach((key, value) -> {
             EmoteLocation location = emoteLocations.get(key);
             //if(location == null) {

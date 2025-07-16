@@ -2,10 +2,7 @@ package net.blazinblaze.blazetwitchmod.item;
 
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.blazinblaze.blazetwitchmod.component.BlazinBlazeTwitchModComponents;
-import net.blazinblaze.blazetwitchmod.item.custom.BlazeSword;
-import net.blazinblaze.blazetwitchmod.item.custom.ImmunityShieldItem;
-import net.blazinblaze.blazetwitchmod.item.custom.MailItem;
-import net.blazinblaze.blazetwitchmod.item.custom.VoiceMessageItem;
+import net.blazinblaze.blazetwitchmod.item.custom.*;
 import net.minecraft.item.Item;
 //import net.minecraft.item.SwordItem;
 import net.minecraft.item.ToolMaterial;
@@ -42,6 +39,7 @@ public class BlazinBlazeTwitchModItems {
     public static final Item MAIL_ITEM_BLAZIN = register("mail_item_blazin", MailItem::new, new Item.Settings().maxCount(1).rarity(Rarity.EPIC).component(BlazinBlazeTwitchModComponents.MAIL_MESSAGE, "test").component(BlazinBlazeTwitchModComponents.MAIL_AUTHOR, "test").component(BlazinBlazeTwitchModComponents.MAIL_TYPE, "blazin").component(BlazinBlazeTwitchModComponents.MAIL_FAREWELL, "Farewell, "));
     public static final Item VOICE_MESSAGE_ITEM = register("voice_message_item", VoiceMessageItem::new, new Item.Settings().maxCount(1).rarity(Rarity.RARE).component(BlazinBlazeTwitchModComponents.VOICE_MESSAGE, "test").component(BlazinBlazeTwitchModComponents.VOICE_AUTHOR, "test"));
     public static final Item IMMUNITY_SHIELD_ITEM = register("immunity_shield_item", ImmunityShieldItem::new, new Item.Settings().maxCount(1).rarity(Rarity.EPIC));
+    public static final Item FAKE_EYE_OF_ENDER = register("fake_eye_of_ender", FakeEyeOfEnderItem::new, new Item.Settings().component(BlazinBlazeTwitchModComponents.FAKE_EYE_USER, "test"));
     //public static final Item BLAZE_SWORD = register("blaze_sword", settings -> new BlazeSword(BLAZIN_TOOL_MATERIAL, 3.5F, 4.0F, settings), new Item.Settings().useCooldown(0.5F).fireproof().maxCount(1).rarity(Rarity.EPIC));
 
     public static Item register(String name, Function<Item.Settings, Item> itemFactory, Item.Settings settings) {

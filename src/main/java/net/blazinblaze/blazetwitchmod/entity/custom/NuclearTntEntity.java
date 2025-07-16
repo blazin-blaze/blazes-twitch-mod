@@ -6,10 +6,13 @@ import net.blazinblaze.blazetwitchmod.util.NuclearExplosionBehavior;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.*;
+import net.minecraft.entity.attribute.DefaultAttributeContainer;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -36,7 +39,7 @@ import java.util.Optional;
 public class NuclearTntEntity extends TntEntity {
     private static final TrackedData<Integer> FUSE;
     private static final TrackedData<BlockState> BLOCK_STATE;
-    private static final short DEFAULT_FUSE = 160;
+    private static final short DEFAULT_FUSE = 80;
     private static final float DEFAULT_EXPLOSION_POWER = 200.0F;
     private static final BlockState DEFAULT_BLOCK_STATE;
     private static final String BLOCK_STATE_NBT_KEY = "block_state";
@@ -59,7 +62,7 @@ public class NuclearTntEntity extends TntEntity {
         this.setPosition(x, y, z);
         double d = world.random.nextDouble() * (double)((float)Math.PI * 2F);
         this.setVelocity(-Math.sin(d) * 0.02, (double)0.2F, -Math.cos(d) * 0.02);
-        this.setFuse(160);
+        this.setFuse(80);
         this.lastX = x;
         this.lastY = y;
         this.lastZ = z;
@@ -69,7 +72,7 @@ public class NuclearTntEntity extends TntEntity {
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {
         super.initDataTracker(builder);
-        builder.add(FUSE, 160);
+        builder.add(FUSE, 80);
         builder.add(BLOCK_STATE, DEFAULT_BLOCK_STATE);
     }
 

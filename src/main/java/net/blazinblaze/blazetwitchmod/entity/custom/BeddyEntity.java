@@ -104,6 +104,9 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
                     plr.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 20*getDestructionTimer(), 255));
                     plr.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 20*getDestructionTimer()));
                     this.attachLeash(plr, true);
+                    if(this.distanceTo(leashedEntity) >= 12) {
+                        this.teleport(leashedEntity.getX(), leashedEntity.getY() + 10, leashedEntity.getZ(), false);
+                    }
                 }
             }else {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
@@ -114,6 +117,9 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
                         player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 20*getDestructionTimer(), 255));
                         player.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 20*getDestructionTimer()));
                         this.attachLeash(player, true);
+                        if(this.distanceTo(player) >= 12) {
+                            this.teleport(player.getX(), player.getY() + 10, player.getZ(), false);
+                        }
                     }
                 }
             }

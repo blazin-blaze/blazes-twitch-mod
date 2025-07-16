@@ -11,18 +11,19 @@ import io.github.iprodigy.bttv.api.domain.User;
 import io.github.iprodigy.bttv.common.Emote;
 import io.github.iprodigy.bttv.common.Provider;
 import net.blazinblaze.blazetwitchmod.component.BlazinBlazeTwitchModComponents;
+import net.blazinblaze.blazetwitchmod.data.BlazinBlazeAttachmentTypes;
+import net.blazinblaze.blazetwitchmod.data.LootCrateAttachmentData;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.blazinblaze.blazetwitchmod.entity.custom.*;
 import net.blazinblaze.blazetwitchmod.item.BlazinBlazeTwitchModItems;
 import net.blazinblaze.blazetwitchmod.mixin.CatEntityAccess;
 import net.blazinblaze.blazetwitchmod.mixin.ParrotEntityAccess;
 import net.blazinblaze.blazetwitchmod.mixin.WolfEntityAccess;
-import net.blazinblaze.blazetwitchmod.networking.EmoteScreenS2CPayload;
-import net.blazinblaze.blazetwitchmod.networking.FollowNotifyS2CPayload;
-import net.blazinblaze.blazetwitchmod.networking.OverlayMessageS2CPayload;
-import net.blazinblaze.blazetwitchmod.networking.PlaySoundS2CPayload;
+import net.blazinblaze.blazetwitchmod.networking.*;
 import net.blazinblaze.blazetwitchmod.sound.BlazinBlazeTwitchModSounds;
+import net.blazinblaze.blazetwitchmod.util.MultiplierTick;
 import net.blazinblaze.blazetwitchmod.util.SoundMessageTimer;
+import net.blazinblaze.blazetwitchmod.util.TeleportTimer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -72,16 +73,15 @@ public class BlazinBlazeTwitchModEvent {
     private static final Map<String, SpawnableMob> SPAWNABLE_MOBS = Map.ofEntries(
             Map.entry("zombie", new SpawnableMob(EntityType.ZOMBIE, 0.7)),
             Map.entry("blaze", new SpawnableMob(EntityType.BLAZE, 0.7)),
-            Map.entry("dragon", new SpawnableMob(EntityType.ENDER_DRAGON, 0.00001)),
-            Map.entry("wither", new SpawnableMob(EntityType.WITHER, 0.00001)),
+            Map.entry("dragon", new SpawnableMob(EntityType.ENDER_DRAGON, 0.0001)),
+            Map.entry("wither", new SpawnableMob(EntityType.WITHER, 0.0001)),
             Map.entry("creeper", new SpawnableMob(EntityType.CREEPER, 0.6)),
             Map.entry("tnt", new SpawnableMob(EntityType.TNT, 0.7)),
             Map.entry("skeleton", new SpawnableMob(EntityType.SKELETON, 0.7)),
-            Map.entry("warden", new SpawnableMob(EntityType.WARDEN, 0.00001)),
+            Map.entry("warden", new SpawnableMob(EntityType.WARDEN, 0.0001)),
             Map.entry("brute", new SpawnableMob(EntityType.PIGLIN_BRUTE, 0.1)),
             Map.entry("guardian", new SpawnableMob(EntityType.GUARDIAN, 0.7)),
             Map.entry("ghast", new SpawnableMob(EntityType.GHAST, 0.5)),
-            Map.entry("mega creeper", new SpawnableMob(BlazinBlazeTwitchModEntities.MEGA_CREEPER, 0.01)),
             Map.entry("lightning bolt", new SpawnableMob(EntityType.LIGHTNING_BOLT, 0.1)),
             Map.entry("spider", new SpawnableMob(EntityType.SPIDER, 0.7)),
             Map.entry("vex", new SpawnableMob(EntityType.VEX, 0.5)),
@@ -98,7 +98,8 @@ public class BlazinBlazeTwitchModEvent {
             Map.entry("silverfish", new SpawnableMob(EntityType.SILVERFISH, 0.7)),
             Map.entry("vindicator", new SpawnableMob(EntityType.VINDICATOR, 0.5)),
             Map.entry("villager", new SpawnableMob(EntityType.VILLAGER, 0.7)),
-            Map.entry("fish", new SpawnableMob(EntityType.SALMON, 0.7)));
+            Map.entry("fish", new SpawnableMob(EntityType.SALMON, 0.7)),
+            Map.entry("iron golem", new SpawnableMob(EntityType.IRON_GOLEM, 0.6)));
     private static final Map<String, String> POTION_COLORS = Map.ofEntries(
             Map.entry("poison", "§2§l"),
             Map.entry("weakness", "§7§l"),
@@ -163,6 +164,7 @@ public class BlazinBlazeTwitchModEvent {
     private static final ArrayList<SoundEvent> soundEffects = new ArrayList<SoundEvent>();
     private static final ArrayList<EntityType<?>> skeletonTypes = new ArrayList<EntityType<?>>();
     private static final ArrayList<EntityType<?>> villagerTypes = new ArrayList<EntityType<?>>();
+    private static final ArrayList<ItemStack> harnessTypes = new ArrayList<ItemStack>();
 
     public BlazinBlazeTwitchModEvent() {
         dyeColors.add(DyeColor.BLUE);
@@ -348,6 +350,23 @@ public class BlazinBlazeTwitchModEvent {
 
         villagerTypes.add(EntityType.ZOMBIE_VILLAGER);
         villagerTypes.add(EntityType.WITCH);
+
+        harnessTypes.add(Items.BLACK_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.BLUE_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.RED_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.LIME_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.PURPLE_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.MAGENTA_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.GREEN_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.LIGHT_BLUE_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.YELLOW_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.WHITE_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.LIGHT_GRAY_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.GRAY_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.CYAN_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.BROWN_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.ORANGE_HARNESS.getDefaultStack());
+        harnessTypes.add(Items.PINK_HARNESS.getDefaultStack());
     }
 
     @EventSubscriber
@@ -393,7 +412,8 @@ public class BlazinBlazeTwitchModEvent {
     public void onChat(ChannelMessageEvent event) {
         String message = event.getMessage();
         String username = event.getUser().getName();
-        if(message.startsWith("!spawn ")) {
+        int multiplier = MultiplierTick.MultiplierTimer.getMultiplier();
+        if(message.toLowerCase().startsWith("!spawn ")) {
             String lowerNpcName = message.substring("!spawn ".length()).toLowerCase();
             SpawnableMob mob = SPAWNABLE_MOBS.get(lowerNpcName);
 
@@ -402,7 +422,7 @@ public class BlazinBlazeTwitchModEvent {
             //String command = fullMessage[0];
             // lowerNpcName = fullMessage[1];
 
-            if (mob != null && ThreadLocalRandom.current().nextDouble() < mob.threshold() && mobSpawnBucket.tryConsume(1L)) {
+            if (mob != null && ThreadLocalRandom.current().nextDouble() < mob.threshold() * multiplier && mobSpawnBucket.tryConsume(1L)) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -417,7 +437,7 @@ public class BlazinBlazeTwitchModEvent {
                                 Entity entity;
                                 String lowerNpcName2 = message.substring("!spawn ".length()).toLowerCase();
                                 if(lowerNpcName2.equals("creeper")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .05) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .05 * multiplier) {
                                         entity = BlazinBlazeTwitchModEntities.MEGA_CREEPER.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
                                         lowerNpcName2 = "mega creeper";
@@ -426,7 +446,7 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("skeleton")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .2) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .2 * multiplier) {
                                         Random random = new Random();
                                         EntityType<?> rndmSkeleton = skeletonTypes.get(random.nextInt(skeletonTypes.size()));
                                         entity = rndmSkeleton.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
@@ -443,12 +463,12 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("zombie")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .05) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .05 * multiplier) {
                                         entity = EntityType.GIANT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
                                         lowerNpcName2 = "giant";
                                         broadcast("§5§l[BTM]§r §d§lEntity mutated!", serverPlayer);
-                                    }else if (ThreadLocalRandom.current().nextDouble() < .2) {
+                                    }else if (ThreadLocalRandom.current().nextDouble() < .2 * multiplier) {
                                         entity = EntityType.HUSK.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
                                         lowerNpcName2 = "husk";
@@ -457,7 +477,7 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("spider")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .2) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .2 * multiplier) {
                                         entity = EntityType.CAVE_SPIDER.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
                                         lowerNpcName2 = "cave spider";
@@ -466,7 +486,7 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("villager")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .2) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .2 * multiplier) {
                                         Random random = new Random();
                                         EntityType<?> rndmVillager = villagerTypes.get(random.nextInt(villagerTypes.size()));
                                         entity = rndmVillager.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
@@ -481,7 +501,7 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("slime")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .2) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .2 * multiplier) {
                                         entity = EntityType.MAGMA_CUBE.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
                                         lowerNpcName2 = "magma cube";
@@ -490,8 +510,11 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("ghast")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .2) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .2 * multiplier) {
                                         entity = EntityType.HAPPY_GHAST.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                        Random random = new Random();
+                                        ItemStack rndmElem = harnessTypes.get(random.nextInt(harnessTypes.size()));
+                                        ((HappyGhastEntity)entity).equipStack(EquipmentSlot.BODY, rndmElem.copy());
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
                                         lowerNpcName2 = "happy ghast";
                                         broadcast("§5§l[BTM]§r §d§lEntity mutated!", serverPlayer);
@@ -499,7 +522,7 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("silverfish")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .2) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .2 * multiplier) {
                                         entity = EntityType.ENDERMITE.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
                                         lowerNpcName2 = "endermite";
@@ -508,7 +531,7 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("guardian")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .2) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .2 * multiplier) {
                                         entity = EntityType.ELDER_GUARDIAN.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
                                         lowerNpcName2 = "elder guardian";
@@ -517,7 +540,7 @@ public class BlazinBlazeTwitchModEvent {
                                         entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     }
                                 }else if(lowerNpcName2.equals("fish")) {
-                                    if (ThreadLocalRandom.current().nextDouble() < .05) {
+                                    if (ThreadLocalRandom.current().nextDouble() < .05 * multiplier) {
                                         entity = BlazinBlazeTwitchModEntities.LIFE_LINKED_FISH_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                         ((LifeLinkedFishEntity)entity).setOwnerUUID(serverPlayer.getUuidAsString());
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_ZOMBIE_VILLAGER_CURE, SoundCategory.NEUTRAL, 0.6F, 1.0F);
@@ -528,14 +551,14 @@ public class BlazinBlazeTwitchModEvent {
                                 }else {
                                     entity = mob.type().spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                 }
-                                if(ThreadLocalRandom.current().nextDouble() < .3) {
+                                if(ThreadLocalRandom.current().nextDouble() < .3 * multiplier) {
                                     if(!lowerNpcName2.equals("lightning bolt") && !lowerNpcName2.equals("tnt")) {
                                         Random random = new Random();
                                         RegistryEntry<StatusEffect> rndmPotion = statusEffects.get(random.nextInt(statusEffects.size()));
                                         String potionName = rndmPotion.value().getName().getString().toUpperCase();
                                         ((LivingEntity) entity).addStatusEffect(new StatusEffectInstance(rndmPotion, 50000, 2, true, true, true));
                                         String potionColor = POTION_COLORS.get(potionName.toLowerCase());
-                                        if(entity instanceof LifeLinkedFishEntity) {
+                                        if(entity instanceof LifeLinkedFishEntity || entity instanceof LifeLinkedCatEntity || entity instanceof LifeLinkedWolfEntity || entity instanceof LifeLinkedParrotEntity) {
                                             entity.setCustomName(Text.literal(String.format("%s§o[%s]§r §4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's %s", potionColor, potionName, username, WordUtils.capitalize(lowerNpcName2))));
                                         }else {
                                             entity.setCustomName(Text.literal(String.format("%s§o[%s]§r %s's %s", potionColor, potionName, username, WordUtils.capitalize(lowerNpcName2))));
@@ -546,7 +569,7 @@ public class BlazinBlazeTwitchModEvent {
                                         broadcast(String.format("§5§l[BTM]§r %s%s just spawned in a %s!", potionColor, event.getUser().getName(), lowerNpcName2), serverPlayer);
                                     }
                                 }else {
-                                    if(entity instanceof LifeLinkedFishEntity) {
+                                    if(entity instanceof LifeLinkedFishEntity || entity instanceof LifeLinkedCatEntity || entity instanceof LifeLinkedWolfEntity || entity instanceof LifeLinkedParrotEntity) {
                                         entity.setCustomName(Text.literal(String.format("§4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's %s", username, WordUtils.capitalize(lowerNpcName2))));
                                     }else {
                                         entity.setCustomName(Text.literal(String.format("%s's %s", username, WordUtils.capitalize(lowerNpcName2))));
@@ -557,6 +580,7 @@ public class BlazinBlazeTwitchModEvent {
                                     broadcast(String.format("§5§l[BTM]§r %s just spawned in a %s!", event.getUser().getName(), lowerNpcName2), serverPlayer);
                                 }
                             }
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -564,8 +588,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!fling")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!fling")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.01 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -584,8 +608,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!nuke")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!nuke")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.2 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -601,9 +625,10 @@ public class BlazinBlazeTwitchModEvent {
 
                             for(int i = 0; i < 25; i++) {
                                 if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
-                                    EntityType.TNT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED).setFuse(5);
+                                    EntityType.TNT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED).setFuse(20);
                                 }
                             }
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -611,8 +636,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!megaNuke")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!meganuke")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.1 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -621,12 +646,13 @@ public class BlazinBlazeTwitchModEvent {
                             BlockPos spawnLocation = serverPlayer.getBlockPos();
                             ServerWorld world = serverPlayer.getWorld();
 
-                            BlazinBlazeTwitchModEntities.NUCLEAR_TNT_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED).setFuse(160);
+                            BlazinBlazeTwitchModEntities.NUCLEAR_TNT_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED).setFuse(80);
 
                             OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§4§lMEGA NUKE!");
                             ServerPlayNetworking.send(serverPlayer, payload);
                             serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_WITHER_DEATH, SoundCategory.NEUTRAL, 1.0F, 0.5F);
                             broadcast(String.format("§5§l[BTM]§r §4§l%s just MEGA nuked you!", event.getUser().getName()), serverPlayer);
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -634,8 +660,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!teleport")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!teleport") || message.toLowerCase().startsWith("!tp")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.1 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -656,11 +682,11 @@ public class BlazinBlazeTwitchModEvent {
                             broadcast(String.format("§5§l[BTM]§r §d§l%s just teleported you!", event.getUser().getName()), serverPlayer);
                             //BlazinBlazeEventHandler.addToList(player);
                             serverPlayer.requestTeleport(randomNumberX, 1000, randomNumberZ);
-                            var instance = new StatusEffectInstance(BlazinBlazeTwitchMod.RANDOM_TELEPORT, 8*20, 0, false, true, false);
-                            serverPlayer.addStatusEffect(instance);
+                            TeleportTimer.INSTANCE.setLocation(serverPlayer.getWorld(), (int)randomNumberX, (int)randomNumberZ);
                             //double randomNumberY = world.getTopY(Heightmap.Type.WORLD_SURFACE, (int) randomNumberX, (int) randomNumberZ);
                             //ServerPlayer.requestTeleport(randomNumberX, randomNumberY, randomNumberZ);
                             //BlazinBlazeTwitchMod.LOGGER.info(String.valueOf(randomNumberY));
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -668,8 +694,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!lootCrate")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!lootcrate") || message.toLowerCase().startsWith("!loot")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.2 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -694,11 +720,9 @@ public class BlazinBlazeTwitchModEvent {
                                     BlazinBlazeTwitchModEntities.LOOT_CRATE_ENTITY.spawn(world, newLocation, SpawnReason.MOB_SUMMONED);
                                 }else{
                                     if(Objects.equals(world.getDimensionEntry(), registryManager.getOrThrow(RegistryKeys.DIMENSION_TYPE).getEntry(DimensionTypes.THE_NETHER.getValue()).get())) {
-                                        //BlazinBlazeLootPlayerData playerState = BlazinBlazeStateSaverAndLoader.getPlayerState(serverPlayer);
-                                        //playerState.netherLootCrates += 1;
+                                        LootCrateAttachmentData data = serverPlayer.getAttachedOrCreate(BlazinBlazeAttachmentTypes.LOOT_CRATE_ATTACHMENT_TYPE, () -> LootCrateAttachmentData.DEFAULT);
+                                        serverPlayer.setAttached(BlazinBlazeAttachmentTypes.LOOT_CRATE_ATTACHMENT_TYPE, data.addInt(1));
 
-                                        //PacketByteBuf data = PacketByteBufs.create();
-                                        //data.writeInt(playerState.netherLootCrates);
                                         broadcast("§5§l[BTM]§r §oYou will receive your loot crate when you leave the nether!", serverPlayer);
                                     }else {
                                         BlazinBlazeTwitchModEntities.LOOT_CRATE_ENTITY.spawn(world, new BlockPos((int) serverPlayer.getX(), world.getTopY(Heightmap.Type.WORLD_SURFACE, (int) serverPlayer.getX(), (int) serverPlayer.getZ()), (int) serverPlayer.getZ()), SpawnReason.MOB_SUMMONED);
@@ -708,6 +732,7 @@ public class BlazinBlazeTwitchModEvent {
                             }else {
                                 BlazinBlazeTwitchModEntities.LOOT_CRATE_ENTITY.spawn(world, new BlockPos(spawnLocation.getX(), (spawnLocation.getY() + 100), spawnLocation.getZ()), SpawnReason.MOB_SUMMONED);
                             }
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -716,8 +741,8 @@ public class BlazinBlazeTwitchModEvent {
 
             }
         }
-        if(message.startsWith("!wolf")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!wolf")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.8 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -727,7 +752,7 @@ public class BlazinBlazeTwitchModEvent {
                             ServerWorld world = serverPlayer.getWorld();
 
                             if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
-                                if(ThreadLocalRandom.current().nextDouble() < 0.03) { //0.03
+                                if(ThreadLocalRandom.current().nextDouble() < 0.06 * multiplier) { //0.03
                                     LifeLinkedWolfEntity wolf = BlazinBlazeTwitchModEntities.LIFE_LINKED_WOLF_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
                                     if(wolf != null) {
@@ -738,7 +763,7 @@ public class BlazinBlazeTwitchModEvent {
                                         wolf.setOwner(serverPlayer);
                                         ((WolfEntityAccess)wolf).callSetCollarColor(DyeColor.RED);
 
-                                        if(ThreadLocalRandom.current().nextDouble() < .3) {
+                                        if(ThreadLocalRandom.current().nextDouble() < .3 * multiplier) {
                                             wolf.equipBodyArmor(Items.WOLF_ARMOR.getDefaultStack());
                                             wolf.setCustomName(Text.literal(String.format("§6§l§o[ARMORED]§r §4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Wolf", username)));
                                         }else {
@@ -749,7 +774,7 @@ public class BlazinBlazeTwitchModEvent {
                                         ServerPlayNetworking.send(serverPlayer, payload);
                                         serverPlayer.playSoundToPlayer(SoundEvents.WOLF_SOUNDS.get(WolfSoundVariants.Type.CLASSIC).ambientSound().value(), SoundCategory.NEUTRAL, 1.0F, 0.5F);
 
-                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave a LIFE-LINKED§r§4❤§r§4§l Wolf to you!", event.getUser().getName()), serverPlayer);
+                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Wolf!", event.getUser().getName()), serverPlayer);
                                     }
                                 }else {
                                     WolfEntity wolf = EntityType.WOLF.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
@@ -782,10 +807,11 @@ public class BlazinBlazeTwitchModEvent {
                                         ServerPlayNetworking.send(serverPlayer, payload);
                                         serverPlayer.playSoundToPlayer(SoundEvents.WOLF_SOUNDS.get(WolfSoundVariants.Type.CLASSIC).ambientSound().value(), SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
-                                        broadcast(String.format("§5§l[BTM]§r %s just gave a Wolf to you!", event.getUser().getName()), serverPlayer);
+                                        broadcast(String.format("§5§l[BTM]§r %s just gave you a Wolf!", event.getUser().getName()), serverPlayer);
                                     }
                                 }
                             }
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -793,8 +819,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!cat")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!cat")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.8 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -804,7 +830,7 @@ public class BlazinBlazeTwitchModEvent {
                             ServerWorld world = serverPlayer.getWorld();
 
                             if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
-                                if(ThreadLocalRandom.current().nextDouble() < 0.03) { //0.03
+                                if(ThreadLocalRandom.current().nextDouble() < 0.06 * multiplier) { //0.03
                                     LifeLinkedCatEntity cat = BlazinBlazeTwitchModEntities.LIFE_LINKED_CAT_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
                                     if(cat != null) {
@@ -820,7 +846,7 @@ public class BlazinBlazeTwitchModEvent {
                                         ServerPlayNetworking.send(serverPlayer, payload);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 0.5F);
 
-                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave a LIFE-LINKED§r§4❤§r§4§l Cat to you!", event.getUser().getName()), serverPlayer);
+                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Cat!", event.getUser().getName()), serverPlayer);
                                     }
                                 }else {
                                     CatEntity cat = EntityType.CAT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
@@ -847,10 +873,11 @@ public class BlazinBlazeTwitchModEvent {
                                         ServerPlayNetworking.send(serverPlayer, payload);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
-                                        broadcast(String.format("§5§l[BTM]§r %s just gave a Cat to you!", event.getUser().getName()), serverPlayer);
+                                        broadcast(String.format("§5§l[BTM]§r %s just gave you a Cat!", event.getUser().getName()), serverPlayer);
                                     }
                                 }
                             }
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -858,8 +885,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!parrot")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!parrot")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.8 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -869,7 +896,7 @@ public class BlazinBlazeTwitchModEvent {
                             ServerWorld world = serverPlayer.getWorld();
 
                             if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
-                                if(ThreadLocalRandom.current().nextDouble() < 0.03) {
+                                if(ThreadLocalRandom.current().nextDouble() < 0.06 * multiplier) {
                                     LifeLinkedParrotEntity parrot = BlazinBlazeTwitchModEntities.LIFE_LINKED_PARROT_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
                                     if(parrot != null) {
@@ -882,7 +909,7 @@ public class BlazinBlazeTwitchModEvent {
                                         ServerPlayNetworking.send(serverPlayer, payload);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_PARROT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 0.5F);
 
-                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave a LIFE-LINKED§r§4❤§r§4§l Parrot to you!", event.getUser().getName()), serverPlayer);
+                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Parrot!", event.getUser().getName()), serverPlayer);
                                     }
                                 }else {
                                     ParrotEntity parrot = EntityType.PARROT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
@@ -902,10 +929,11 @@ public class BlazinBlazeTwitchModEvent {
                                         ServerPlayNetworking.send(serverPlayer, payload);
                                         serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_PARROT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
-                                        broadcast(String.format("§5§l[BTM]§r %s just gave a Parrot to you!", event.getUser().getName()), serverPlayer);
+                                        broadcast(String.format("§5§l[BTM]§r %s just gave you a Parrot!", event.getUser().getName()), serverPlayer);
                                     }
                                 }
                             }
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -913,8 +941,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!potion")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!potion")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.6 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -931,7 +959,8 @@ public class BlazinBlazeTwitchModEvent {
                             OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload(potionColor2 + "POTION EFFECT!");
                             ServerPlayNetworking.send(serverPlayer, payload);
                             serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_SPLASH_POTION_BREAK, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                            broadcast(String.format("§5§l[BTM]§r %s%s just gave the %s effect to you!", potionColor2, event.getUser().getName(), potionName), serverPlayer);
+                            broadcast(String.format("§5§l[BTM]§r %s%s just gave you the %s effect!", potionColor2, event.getUser().getName(), potionName), serverPlayer);
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -939,8 +968,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!cBomb")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!cbomb")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.2 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -959,6 +988,7 @@ public class BlazinBlazeTwitchModEvent {
                                     c.setCustomName(Text.of(String.format("§4§l%s's CBOMB", username)));
                                 }
                             }
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -966,8 +996,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!message")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!message")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.6 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1022,6 +1052,7 @@ public class BlazinBlazeTwitchModEvent {
                             ServerPlayNetworking.send(serverPlayer, payload);
                             serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_NETHER_WOOD_DOOR_OPEN, SoundCategory.NEUTRAL, 1.0F, 1.0F);
                             broadcast(String.format("§5§l[BTM]§r §7§l%s just sent you a message!", event.getUser().getName()), serverPlayer);
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -1029,8 +1060,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!voiceMessage")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!voicemessage")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.6 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1043,11 +1074,18 @@ public class BlazinBlazeTwitchModEvent {
                             stack.set(BlazinBlazeTwitchModComponents.VOICE_MESSAGE, limitedText);
                             stack.set(BlazinBlazeTwitchModComponents.VOICE_AUTHOR, event.getUser().getName());
                             serverPlayer.giveItemStack(stack);
-
-                            OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§9§lYOU'VE GOT VOICEMAIL!");
-                            ServerPlayNetworking.send(serverPlayer, payload);
-                            serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                            broadcast(String.format("§5§l[BTM]§r §9§l%s just sent you a voice message!", event.getUser().getName()), serverPlayer);
+                            if(ThreadLocalRandom.current().nextDouble() < 0.1 * multiplier) {
+                                stack.use(serverPlayer.getWorld(), serverPlayer, serverPlayer.getActiveHand());
+                                serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                                broadcast(String.format("§5§l[BTM]§r §9§l%s just sent you an AUTOMATIC voice message!", event.getUser().getName()), serverPlayer);
+                                shouldGiveImmunity(serverPlayer);
+                            }else {
+                                OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§9§lYOU'VE GOT VOICEMAIL!");
+                                ServerPlayNetworking.send(serverPlayer, payload);
+                                serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                                broadcast(String.format("§5§l[BTM]§r §9§l%s just sent you a voice message!", event.getUser().getName()), serverPlayer);
+                                shouldGiveImmunity(serverPlayer);
+                            }
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -1055,8 +1093,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!dItem")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!ditem")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.6 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1071,6 +1109,7 @@ public class BlazinBlazeTwitchModEvent {
                             ServerPlayNetworking.send(serverPlayer, payload);
                             serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.NEUTRAL, 1.0F, 1.0F);
                             broadcast(String.format("§5§l[BTM]§r %s just deleted your item!", event.getUser().getName()), serverPlayer);
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -1078,8 +1117,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!dInventory")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!dinventory")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.05 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1092,6 +1131,7 @@ public class BlazinBlazeTwitchModEvent {
                             ServerPlayNetworking.send(serverPlayer, payload);
                             serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.NEUTRAL, 1.0F, 1.0F);
                             broadcast(String.format("§5§l[BTM]§r §4§l%s just deleted your ENTIRE INVENTORY!", event.getUser().getName()), serverPlayer);
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -1099,8 +1139,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!void")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!void")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.05 * multiplier) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1113,6 +1153,7 @@ public class BlazinBlazeTwitchModEvent {
                             ServerPlayNetworking.send(serverPlayer, payload);
                             serverPlayer.playSoundToPlayer(SoundEvents.AMBIENT_CAVE.value(), SoundCategory.NEUTRAL, 1.0F, 1.0F);
                             broadcast(String.format("§5§l[BTM]§r §8§l%s just threw you into the VOID!", event.getUser().getName()), serverPlayer);
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -1120,8 +1161,8 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!beddy")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!beddy")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.1 * multiplier) {
 
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
@@ -1140,6 +1181,7 @@ public class BlazinBlazeTwitchModEvent {
                             ServerPlayNetworking.send(serverPlayer, payload);
                             serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_STONE_BREAK, SoundCategory.NEUTRAL, 1.0F, 1.0F);
                             broadcast(String.format("§5§l[BTM]§r §8§l%s just attached you to Beddy!", event.getUser().getName()), serverPlayer);
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -1147,20 +1189,20 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.startsWith("!sound")) {
-            if(ThreadLocalRandom.current().nextDouble() < 1) {
+        if(message.toLowerCase().startsWith("!sound")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.6 * multiplier) {
 
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
                     for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
                         if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
-                            BlockPos location = serverPlayer.getBlockPos();
                             Random random = new Random();
                             SoundEvent rndmSound = soundEffects.get(random.nextInt(soundEffects.size()));
                             serverPlayer.playSoundToPlayer(rndmSound, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
                             SoundMessageTimer.INSTANCE.setTimerAndUser(60L, event.getUser().getName());
+                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -1168,6 +1210,49 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
+        if(message.toLowerCase().startsWith("!fullscreen")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.2 * multiplier) {
+                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+
+                if(server != null) {
+                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                        if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
+
+                            FullscreenS2CPayload payload = new FullscreenS2CPayload("§6§lFULLSCREEN TOGGLED!");
+                            ServerPlayNetworking.send(serverPlayer, payload);
+                            serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_PISTON_EXTEND, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                            broadcast(String.format("§5§l[BTM]§r §8§l%s just toggled fullscreen!", event.getUser().getName()), serverPlayer);
+
+                            shouldGiveImmunity(serverPlayer);
+                        }else {
+                            broadcastBlock(serverPlayer, event.getUser().getName());
+                        }
+                    }
+                }
+            }
+        }
+        if(message.toLowerCase().startsWith("!close")) {
+            if(ThreadLocalRandom.current().nextDouble() < 0.05 * multiplier) {
+                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+
+                if(server != null) {
+                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                        if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
+
+                            CloseS2CPayload payload = new CloseS2CPayload("§c§lWINDOW CLOSED!");
+                            ServerPlayNetworking.send(serverPlayer, payload);
+                            serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_CHEST_CLOSE, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                            broadcast(String.format("§5§l[BTM]§r §8§l%s just closed your window!", event.getUser().getName()), serverPlayer);
+
+                            shouldGiveImmunity(serverPlayer);
+                        }else {
+                            broadcastBlock(serverPlayer, event.getUser().getName());
+                        }
+                    }
+                }
+            }
+        }
+
 
         final Collection<Emote> globalEmotes = BlazinBlazeTwitchMod.globalEmotes;
         final Map<String, List<Emote>> channelEmotes = BlazinBlazeTwitchMod.channelEmotes;
@@ -1178,13 +1263,15 @@ public class BlazinBlazeTwitchModEvent {
                 String[] messageWords = message.split(" ");
                 for(String word : messageWords) {
                     if(word.matches(emote.code())) {
-                        MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+                        if(ThreadLocalRandom.current().nextDouble() < 0.7) {
+                            MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
-                        if(server != null) {
-                            for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                                EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
-                                ServerPlayNetworking.send(serverPlayer, payload);
-                                break;
+                            if(server != null) {
+                                for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                                    EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
+                                    ServerPlayNetworking.send(serverPlayer, payload);
+                                    break;
+                                }
                             }
                         }
                     }
@@ -1199,13 +1286,15 @@ public class BlazinBlazeTwitchModEvent {
                     String[] messageWords = message.split(" ");
                     for(String word : messageWords) {
                         if(word.matches(emote.code())) {
-                            MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+                            if(ThreadLocalRandom.current().nextDouble() < 0.7) {
+                                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
-                            if(server != null) {
-                                for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                                    EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
-                                    ServerPlayNetworking.send(serverPlayer, payload);
-                                    break;
+                                if(server != null) {
+                                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                                        EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
+                                        ServerPlayNetworking.send(serverPlayer, payload);
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -1221,13 +1310,15 @@ public class BlazinBlazeTwitchModEvent {
                     String[] messageWords = message.split(" ");
                     for(String word : messageWords) {
                         if(word.matches(emote.code())) {
-                            MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+                            if(ThreadLocalRandom.current().nextDouble() < 0.7) {
+                                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
-                            if(server != null) {
-                                for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                                    EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
-                                    ServerPlayNetworking.send(serverPlayer, payload);
-                                    break;
+                                if(server != null) {
+                                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                                        EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
+                                        ServerPlayNetworking.send(serverPlayer, payload);
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -1243,6 +1334,14 @@ public class BlazinBlazeTwitchModEvent {
 
         // Create a firework at spawn for a large gift sub event
         // Note: these EventSubscriber's operate on a separate thread so we need to use Bukkit's scheduler to run this on the main thread
+    }
+
+    private void shouldGiveImmunity(ServerPlayerEntity serverPlayer) {
+        if(ThreadLocalRandom.current().nextDouble() < 0.001) {
+            serverPlayer.giveItemStack(BlazinBlazeTwitchModItems.IMMUNITY_SHIELD_ITEM.getDefaultStack().copy());
+            serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+            broadcast("§5§l[BTM]§r §2§lYou just received an immunity shield!", serverPlayer);
+        }
     }
 
     private void broadcastBlock(ServerPlayerEntity serverPlayer, String username) {

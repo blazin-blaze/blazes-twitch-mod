@@ -49,4 +49,10 @@ public class BlazinBlazeTwitchModComponents {
             Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "voice_author"),
             ComponentType.<String>builder().codec(Codec.STRING).build()
     );
+
+    public static final ComponentType<String> FAKE_EYE_USER = Registry.register(
+            Registries.DATA_COMPONENT_TYPE,
+            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "fake_eye_user"),
+            ComponentType.<String>builder().codec(Codec.STRING).build()
+    );
 }
