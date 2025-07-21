@@ -12,7 +12,7 @@ import io.github.iprodigy.bttv.api.domain.User;
 import io.github.iprodigy.bttv.common.Emote;
 import io.github.iprodigy.bttv.common.Provider;
 import net.blazinblaze.blazetwitchmod.block.BlazinBlazeTwitchModBlocks;
-import net.blazinblaze.blazetwitchmod.config.BlazinBlazeConfig;
+import net.blazinblaze.blazetwitchmod.config.BlazinBlazeYAML;
 import net.blazinblaze.blazetwitchmod.data.BlazinBlazeAttachmentTypes;
 import net.blazinblaze.blazetwitchmod.data.LootCrateAttachmentData;
 import net.blazinblaze.blazetwitchmod.data.MultiplierAttachmentData;
@@ -74,6 +74,7 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 	public static Map<String, List<Emote>> channelEmotes = new HashMap<>();
 	public static Map<String, List<Emote>> sharedEmotes = new HashMap<>();
 	public static boolean hasLoadedClient = false;
+	public static BlazinBlazeYAML config;
 
 	@Override
 	public void onInitialize() {
@@ -88,21 +89,43 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		BlazinBlazeTwitchModSounds.initialize();
 		BlazinBlazeAttachmentTypes.init();
 
-		File configFile = new File(FabricLoader.getInstance().getConfigDir().resolve("btm-config.json").toString());
-		BlazinBlazeConfig config = BlazinBlazeConfig.loadConfigFile(configFile);
+		MultiplierTick.register();
+		SoundMessageTimer.register();
+		TeleportTimer.register();
 
-		if((config.clientName != null && !config.clientName.isBlank()) &&
-				(config.clientID != null && !config.clientID.isBlank()) &&
-				(config.clientSecret != null && !config.clientSecret.isBlank()) &&
-				(config.channelToken != null && !config.channelToken.isBlank())) {
+		PayloadTypeRegistry.playS2C().register(MailScreenS2CPayload.ID, MailScreenS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(FollowNotifyS2CPayload.ID, FollowNotifyS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(PlaySoundS2CPayload.ID, PlaySoundS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(OverlayMessageS2CPayload.ID, OverlayMessageS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(VoiceMessageS2CPayload.ID, VoiceMessageS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(EmoteScreenS2CPayload.ID, EmoteScreenS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(FullscreenS2CPayload.ID, FullscreenS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(CloseS2CPayload.ID, CloseS2CPayload.CODEC);
+
+		//File configFile = new File(FabricLoader.getInstance().getConfigDir().resolve("btm-config.json").toString());
+		//BlazinBlazeConfig config = BlazinBlazeConfig.loadConfigFile(configFile);
+
+		File configFileYaml = new File(FabricLoader.getInstance().getConfigDir().resolve("btm-config.yaml").toString());
+		config = new BlazinBlazeYAML(configFileYaml);
+		config.load();
+
+		String clientName = config.getClientInfo(BlazinBlazeYAML.clientName);
+		String clientID = config.getClientInfo(BlazinBlazeYAML.clientID);
+		String clientSecret = config.getClientInfo(BlazinBlazeYAML.clientSecret);
+		String channelToken = config.getClientInfo(BlazinBlazeYAML.channelToken);
+
+		if((clientName != null && !clientName.equals(BlazinBlazeYAML.defaultClientName)) &&
+				(clientID != null && !clientID.equals(BlazinBlazeYAML.defaultClientID)) &&
+				(clientSecret != null && !clientSecret.equals(BlazinBlazeYAML.defaultClientSecret)) &&
+				(channelToken != null && !channelToken.equals(BlazinBlazeYAML.defaultChannelToken))) {
 			// Build credential when possible (old OAuth)
-			String token = config.channelToken;
+			String token = channelToken;
 			OAuth2Credential credential = StringUtils.isNotBlank(token) ? new OAuth2Credential("twitch", token) : null;
 
 			// Build TwitchClient
 			client = TwitchClientBuilder.builder()
-					.withClientId(config.clientID)
-					.withClientSecret(config.clientSecret)
+					.withClientId(clientID)
+					.withClientSecret(clientSecret)
 					.withEnableChat(true)
 					.withChatAccount(credential)
 					.withEnableHelix(true)
@@ -110,16 +133,16 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 					.withChatCommandsViaHelix(false)
 					.build();
 
-			client.getChat().joinChannel(config.clientName);
-			client.getClientHelper().enableFollowEventListener(config.clientName);
-			client.getClientHelper().enableStreamEventListener(config.clientName);
+			client.getChat().joinChannel(clientName);
+			client.getClientHelper().enableFollowEventListener(clientName);
+			client.getClientHelper().enableStreamEventListener(clientName);
 
 			// Register event listeners
 			client.getEventManager().getEventHandler(SimpleEventHandler.class).registerListener(new BlazinBlazeTwitchModEvent());
 
 			bAPI = BttvApiFactory.build();
 			globalEmotes = BlazinBlazeTwitchMod.bAPI.getGlobalEmotes();
-			HystrixCommand<UserList> hystrixUsers = client.getHelix().getUsers(null, null, List.of(config.clientName));
+			HystrixCommand<UserList> hystrixUsers = client.getHelix().getUsers(null, null, List.of(clientName));
 			List<com.github.twitch4j.helix.domain.User> usersList = hystrixUsers.execute().getUsers();
 			for(com.github.twitch4j.helix.domain.User user : usersList) {
 				try {
@@ -137,19 +160,6 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 			LOGGER.error("ClientID, ClientName, and/or ClientSecret in config file is blank/null.\n" +
 					"Please check the config file and fill in this information for the mod to work correctly.");
 		}
-
-		MultiplierTick.register();
-		SoundMessageTimer.register();
-		TeleportTimer.register();
-
-		PayloadTypeRegistry.playS2C().register(MailScreenS2CPayload.ID, MailScreenS2CPayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(FollowNotifyS2CPayload.ID, FollowNotifyS2CPayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(PlaySoundS2CPayload.ID, PlaySoundS2CPayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(OverlayMessageS2CPayload.ID, OverlayMessageS2CPayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(VoiceMessageS2CPayload.ID, VoiceMessageS2CPayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(EmoteScreenS2CPayload.ID, EmoteScreenS2CPayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(FullscreenS2CPayload.ID, FullscreenS2CPayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(CloseS2CPayload.ID, CloseS2CPayload.CODEC);
 
 		ServerLifecycleEvents.SERVER_STARTED.register((server -> {
 			serverRef = server;

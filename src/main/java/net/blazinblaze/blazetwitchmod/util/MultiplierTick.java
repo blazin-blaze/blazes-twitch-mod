@@ -25,7 +25,7 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
             MultiplierTimer.resetTimer();
             for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
                 serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                serverPlayer.sendMessage(Text.literal(String.format("§5§l[BTM]§r §a§lMultipler just INCREASED to x%s!", MultiplierTimer.getMultiplier())));
+                serverPlayer.sendMessage(Text.literal(String.format("§5§l[BTM]§r §a§lMultiplier just INCREASED to x%s!", MultiplierTimer.getMultiplier())));
             }
         }else {
             MultiplierTimer.incrementTimer();
@@ -52,6 +52,19 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
                 ServerWorld overworld = server.getOverworld();
                 TimerAttachmentData data = overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, () -> TimerAttachmentData.DEFAULT);
                 overworld.setAttached(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, data.addInt(1));
+            }
+        }
+
+        public static void eventBoost(int value) {
+            if(value + getTimer() > 20*600) {
+                value = 20*600 - getTimer();
+            }
+            timer.add(value);
+            MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+            if(server != null) {
+                ServerWorld overworld = server.getOverworld();
+                TimerAttachmentData data = overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, () -> TimerAttachmentData.DEFAULT);
+                overworld.setAttached(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, data.addInt(value));
             }
         }
 
