@@ -46,12 +46,15 @@ public class BlazinBlazeTwitchModEntities {
     public static final EntityType<LifeLinkedWolfEntity> LIFE_LINKED_WOLF_ENTITY = register("life_linked_wolf", EntityType.Builder.<LifeLinkedWolfEntity>create(LifeLinkedWolfEntity::new, SpawnGroup.CREATURE).dimensions(0.6F, 0.85F).eyeHeight(0.68F).passengerAttachments(new Vec3d((double)0.0F, 0.81875, (double)-0.0625F)).maxTrackingRange(10));
     public static final EntityType<LifeLinkedFishEntity> LIFE_LINKED_FISH_ENTITY = register("life_linked_fish", EntityType.Builder.<LifeLinkedFishEntity>create(LifeLinkedFishEntity::new, SpawnGroup.WATER_AMBIENT).dimensions(0.7F, 0.4F).eyeHeight(0.26F).maxTrackingRange(4));
 
+    public static final EntityType<ChatterEntity> CHATTER_ENTITY = register("chatter_entity", EntityType.Builder.<ChatterEntity>create(ChatterEntity::new, SpawnGroup.CREATURE).dimensions(0.35F, 0.6F).eyeHeight(0.36F).vehicleAttachment(0.04F).maxTrackingRange(8).trackingTickInterval(2));
+
     public static void registerAttributes() {
         FabricDefaultAttributeRegistry.register(BEDDY_ENTITY, BeddyEntity.createCubeAttributes());
         FabricDefaultAttributeRegistry.register(LIFE_LINKED_CAT_ENTITY, CatEntity.createCatAttributes());
         FabricDefaultAttributeRegistry.register(LIFE_LINKED_WOLF_ENTITY, WolfEntity.createWolfAttributes());
         FabricDefaultAttributeRegistry.register(LIFE_LINKED_PARROT_ENTITY, ParrotEntity.createParrotAttributes());
         FabricDefaultAttributeRegistry.register(LIFE_LINKED_FISH_ENTITY, SalmonEntity.createFishAttributes());
+        FabricDefaultAttributeRegistry.register(CHATTER_ENTITY, ChatterEntity.createAllayAttributes());
     }
 
     //.build(RegistryKey.of(RegistryKeys.ENTITY_TYPE, Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "nuclear_tnt_entity")

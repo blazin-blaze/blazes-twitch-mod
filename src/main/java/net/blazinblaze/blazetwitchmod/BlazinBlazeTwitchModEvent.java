@@ -31,6 +31,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.passive.*;
 import io.github.bucket4j.Bucket;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.registry.*;
@@ -43,11 +44,15 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.TypeFilter;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.dimension.DimensionTypes;
 import org.apache.commons.lang.WordUtils;
+import org.apache.logging.log4j.core.jmx.Server;
 
+import javax.swing.*;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -100,7 +105,11 @@ public class BlazinBlazeTwitchModEvent {
             Map.entry("minecraft", BlazinBlazeTwitchModItems.MAIL_ITEM_MINECRAFT.asItem().getDefaultStack()),
             Map.entry("error", BlazinBlazeTwitchModItems.MAIL_ITEM_ERROR.asItem().getDefaultStack()),
             Map.entry("sinister", BlazinBlazeTwitchModItems.MAIL_ITEM_SINISTER.asItem().getDefaultStack()));
-    private final Bucket mobSpawnBucket = BucketUtils.createBucket(BucketUtils.simple(5, Duration.ofSeconds(5)));
+    private static final Map<String, String> ITEM_ALIAS = Map.ofEntries(
+            Map.entry("steak", "cooked_beef")
+    );
+    private final Bucket commandBucket = BucketUtils.createBucket(BucketUtils.simple(5, Duration.ofSeconds(10)));
+    private final Bucket chatterBucket = BucketUtils.createBucket(BucketUtils.simple(1, Duration.ofSeconds(60)));
     private static final ArrayList<DyeColor> dyeColors = new ArrayList<DyeColor>();
     private static final ArrayList<RegistryKey<WolfVariant>> wolfVariants = new ArrayList<RegistryKey<WolfVariant>>();
     private static final ArrayList<RegistryKey<CatVariant>> catVariants = new ArrayList<RegistryKey<CatVariant>>();
@@ -113,6 +122,26 @@ public class BlazinBlazeTwitchModEvent {
     private static final ArrayList<EntityType<?>> skeletonTypes = new ArrayList<EntityType<?>>();
     private static final ArrayList<EntityType<?>> villagerTypes = new ArrayList<EntityType<?>>();
     private static final ArrayList<ItemStack> harnessTypes = new ArrayList<ItemStack>();
+    private static final List<String> commandNames = List.of("!spawn",
+            "!dinventory",
+            "!ditem",
+            "!fling",
+            "!void",
+            "!beddy",
+            "!lootcrate",
+            "!loot",
+            "!nuke",
+            "!meganuke",
+            "voicemessage",
+            "!potion",
+            "!teleport",
+            "!tp",
+            "!cbomb",
+            "!sound",
+            "!fullscreen",
+            "!close",
+            "!dtimer",
+            "!hold");
 
     public BlazinBlazeTwitchModEvent() {
         SPAWNABLE_MOBS.put("zombie", new SpawnableMob(EntityType.ZOMBIE, getProbabilityOrDefault(BlazinBlazeProbabilities.ZOMBIE_DEFAULT)));
@@ -129,7 +158,7 @@ public class BlazinBlazeTwitchModEvent {
         SPAWNABLE_MOBS.put("lightning bolt", new SpawnableMob(EntityType.LIGHTNING_BOLT, getProbabilityOrDefault(BlazinBlazeProbabilities.LIGHTNING_BOLT_DEFAULT)));
         SPAWNABLE_MOBS.put("spider", new SpawnableMob(EntityType.SPIDER, getProbabilityOrDefault(BlazinBlazeProbabilities.SPIDER_DEFAULT)));
         SPAWNABLE_MOBS.put("vex", new SpawnableMob(EntityType.VEX, getProbabilityOrDefault(BlazinBlazeProbabilities.VEX_DEFAULT)));
-        SPAWNABLE_MOBS.put("evoker", new SpawnableMob(EntityType.LIGHTNING_BOLT, getProbabilityOrDefault(BlazinBlazeProbabilities.EVOKER_DEFAULT)));
+        SPAWNABLE_MOBS.put("evoker", new SpawnableMob(EntityType.EVOKER, getProbabilityOrDefault(BlazinBlazeProbabilities.EVOKER_DEFAULT)));
         SPAWNABLE_MOBS.put("pillager", new SpawnableMob(EntityType.PILLAGER, getProbabilityOrDefault(BlazinBlazeProbabilities.PILLAGER_DEFAULT)));
         SPAWNABLE_MOBS.put("breeze", new SpawnableMob(EntityType.BREEZE, getProbabilityOrDefault(BlazinBlazeProbabilities.BREEZE_DEFAULT)));
         SPAWNABLE_MOBS.put("hoglin", new SpawnableMob(EntityType.HOGLIN, getProbabilityOrDefault(BlazinBlazeProbabilities.HOGLIN_DEFAULT)));
@@ -408,7 +437,7 @@ public class BlazinBlazeTwitchModEvent {
             //String command = fullMessage[0];
             // lowerNpcName = fullMessage[1];
 
-            if (mob != null && ThreadLocalRandom.current().nextDouble() < mob.threshold() * multiplier && mobSpawnBucket.tryConsume(1L)) {
+            if (mob != null && ThreadLocalRandom.current().nextDouble() < (mob.threshold() * multiplier) && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -575,7 +604,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!fling")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.FLING_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.FLING_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -595,7 +624,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!nuke")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.NUKE_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.NUKE_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -623,7 +652,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!meganuke")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.MEGA_NUKE_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.MEGA_NUKE_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -647,7 +676,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!teleport") || message.toLowerCase().startsWith("!tp")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.TELEPORT_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.TELEPORT_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -668,6 +697,7 @@ public class BlazinBlazeTwitchModEvent {
                             broadcast(String.format("§5§l[BTM]§r §d§l%s just teleported you!", event.getUser().getName()), serverPlayer);
                             //BlazinBlazeEventHandler.addToList(player);
                             serverPlayer.requestTeleport(randomNumberX, 1000, randomNumberZ);
+                            serverPlayer.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOW_FALLING, 10000000, 1, false, false));
                             TeleportTimer.INSTANCE.setLocation(serverPlayer.getWorld(), (int)randomNumberX, (int)randomNumberZ);
                             //double randomNumberY = world.getTopY(Heightmap.Type.WORLD_SURFACE, (int) randomNumberX, (int) randomNumberZ);
                             //ServerPlayer.requestTeleport(randomNumberX, randomNumberY, randomNumberZ);
@@ -681,7 +711,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!lootcrate") || message.toLowerCase().startsWith("!loot")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.LOOT_CRATE_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.LOOT_CRATE_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -727,207 +757,208 @@ public class BlazinBlazeTwitchModEvent {
 
             }
         }
-        if(message.toLowerCase().startsWith("!wolf")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.WOLF_DEFAULT) * multiplier) {
-                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+        if(message.toLowerCase().startsWith("!pet")) {
+            String lowerPet = message.substring("!pet ".length());
+            if(lowerPet.toLowerCase().contains("wolf")) {
+                if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.WOLF_DEFAULT) * multiplier && checkCooldown()) {
+                    MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
-                if(server != null) {
-                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                        if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
-                            BlockPos spawnLocation = serverPlayer.getBlockPos();
-                            ServerWorld world = serverPlayer.getWorld();
+                    if(server != null) {
+                        for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                            if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
+                                BlockPos spawnLocation = serverPlayer.getBlockPos();
+                                ServerWorld world = serverPlayer.getWorld();
 
-                            if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
-                                if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.LIFE_LINKED_DEFAULT) * multiplier) {
-                                    LifeLinkedWolfEntity wolf = BlazinBlazeTwitchModEntities.LIFE_LINKED_WOLF_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
+                                    if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.LIFE_LINKED_DEFAULT) * multiplier) {
+                                        LifeLinkedWolfEntity wolf = BlazinBlazeTwitchModEntities.LIFE_LINKED_WOLF_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
-                                    if(wolf != null) {
-                                        //BlazinBlazeTwitchMod.LOGGER.info(String.valueOf("Wolf is not null!"));
-                                        Random random = new Random();
+                                        if(wolf != null) {
+                                            //BlazinBlazeTwitchMod.LOGGER.info(String.valueOf("Wolf is not null!"));
+                                            Random random = new Random();
 
-                                        wolf.setTamed(true, true);
-                                        wolf.setOwner(serverPlayer);
-                                        ((WolfEntityAccess)wolf).callSetCollarColor(DyeColor.RED);
+                                            wolf.setTamed(true, true);
+                                            wolf.setOwner(serverPlayer);
+                                            ((WolfEntityAccess)wolf).callSetCollarColor(DyeColor.RED);
 
-                                        if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.WOLF_ARMORED_DEFAULT) * multiplier) {
-                                            wolf.equipBodyArmor(Items.WOLF_ARMOR.getDefaultStack());
-                                            wolf.setCustomName(Text.literal(String.format("§6§l§o[ARMORED]§r §4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Wolf", username)));
-                                        }else {
-                                            wolf.setCustomName(Text.literal(String.format("§4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Wolf", username)));
+                                            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.WOLF_ARMORED_DEFAULT) * multiplier) {
+                                                wolf.equipBodyArmor(Items.WOLF_ARMOR.getDefaultStack());
+                                                wolf.setCustomName(Text.literal(String.format("§6§l§o[ARMORED]§r §4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Wolf", username)));
+                                            }else {
+                                                wolf.setCustomName(Text.literal(String.format("§4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Wolf", username)));
+                                            }
+
+                                            OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§7§lWOLF SPAWNED!");
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                            serverPlayer.playSoundToPlayer(SoundEvents.WOLF_SOUNDS.get(WolfSoundVariants.Type.CLASSIC).ambientSound().value(), SoundCategory.NEUTRAL, 1.0F, 0.5F);
+
+                                            broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Wolf!", event.getUser().getName()), serverPlayer);
                                         }
+                                    }else {
+                                        WolfEntity wolf = EntityType.WOLF.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
-                                        OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§7§lWOLF SPAWNED!");
-                                        ServerPlayNetworking.send(serverPlayer, payload);
-                                        serverPlayer.playSoundToPlayer(SoundEvents.WOLF_SOUNDS.get(WolfSoundVariants.Type.CLASSIC).ambientSound().value(), SoundCategory.NEUTRAL, 1.0F, 0.5F);
+                                        if(wolf != null) {
+                                            //BlazinBlazeTwitchMod.LOGGER.info(String.valueOf("Wolf is not null!"));
+                                            Random random = new Random();
 
-                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Wolf!", event.getUser().getName()), serverPlayer);
-                                    }
-                                }else {
-                                    WolfEntity wolf = EntityType.WOLF.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                            DyeColor rndmElem = dyeColors.get(random.nextInt(dyeColors.size()));
+                                            RegistryKey<WolfVariant> rndmElem2 = wolfVariants.get(random.nextInt(wolfVariants.size()));
 
-                                    if(wolf != null) {
-                                        //BlazinBlazeTwitchMod.LOGGER.info(String.valueOf("Wolf is not null!"));
-                                        Random random = new Random();
+                                            wolf.setTamed(true, true);
+                                            wolf.setOwner(serverPlayer);
+                                            ((WolfEntityAccess)wolf).callSetCollarColor(rndmElem);
 
-                                        DyeColor rndmElem = dyeColors.get(random.nextInt(dyeColors.size()));
-                                        RegistryKey<WolfVariant> rndmElem2 = wolfVariants.get(random.nextInt(wolfVariants.size()));
+                                            DynamicRegistryManager registryManager = world.getRegistryManager();
+                                            Optional<RegistryEntry.Reference<WolfVariant>> wolfVariant = registryManager.getOrThrow(RegistryKeys.WOLF_VARIANT).getEntry(rndmElem2.getValue());
 
-                                        wolf.setTamed(true, true);
-                                        wolf.setOwner(serverPlayer);
-                                        ((WolfEntityAccess)wolf).callSetCollarColor(rndmElem);
+                                            wolfVariant.ifPresentOrElse(value -> ((WolfEntityAccess)wolf).callSetVariant(wolfVariant.get()),
+                                                    () -> BlazinBlazeTwitchMod.LOGGER.info("WolfVariant not found!"));
 
-                                        DynamicRegistryManager registryManager = world.getRegistryManager();
-                                        Optional<RegistryEntry.Reference<WolfVariant>> wolfVariant = registryManager.getOrThrow(RegistryKeys.WOLF_VARIANT).getEntry(rndmElem2.getValue());
+                                            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.WOLF_ARMORED_DEFAULT) * multiplier) {
+                                                wolf.equipBodyArmor(Items.WOLF_ARMOR.getDefaultStack());
+                                                wolf.setCustomName(Text.literal(String.format("§6§l§o[ARMORED]§r %s's Wolf", username)));
+                                            }else {
+                                                wolf.setCustomName(Text.literal(String.format("%s's Wolf", username)));
+                                            }
 
-                                        wolfVariant.ifPresentOrElse(value -> ((WolfEntityAccess)wolf).callSetVariant(wolfVariant.get()),
-                                                () -> BlazinBlazeTwitchMod.LOGGER.info("WolfVariant not found!"));
+                                            OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§7§lWOLF SPAWNED!");
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                            serverPlayer.playSoundToPlayer(SoundEvents.WOLF_SOUNDS.get(WolfSoundVariants.Type.CLASSIC).ambientSound().value(), SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
-                                        if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.WOLF_ARMORED_DEFAULT) * multiplier) {
-                                            wolf.equipBodyArmor(Items.WOLF_ARMOR.getDefaultStack());
-                                            wolf.setCustomName(Text.literal(String.format("§6§l§o[ARMORED]§r %s's Wolf", username)));
-                                        }else {
-                                            wolf.setCustomName(Text.literal(String.format("%s's Wolf", username)));
+                                            broadcast(String.format("§5§l[BTM]§r %s just gave you a Wolf!", event.getUser().getName()), serverPlayer);
                                         }
-
-                                        OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§7§lWOLF SPAWNED!");
-                                        ServerPlayNetworking.send(serverPlayer, payload);
-                                        serverPlayer.playSoundToPlayer(SoundEvents.WOLF_SOUNDS.get(WolfSoundVariants.Type.CLASSIC).ambientSound().value(), SoundCategory.NEUTRAL, 1.0F, 1.0F);
-
-                                        broadcast(String.format("§5§l[BTM]§r %s just gave you a Wolf!", event.getUser().getName()), serverPlayer);
                                     }
                                 }
+                                shouldGiveImmunity(serverPlayer);
+                            }else {
+                                broadcastBlock(serverPlayer, event.getUser().getName());
                             }
-                            shouldGiveImmunity(serverPlayer);
-                        }else {
-                            broadcastBlock(serverPlayer, event.getUser().getName());
                         }
                     }
                 }
-            }
-        }
-        if(message.toLowerCase().startsWith("!cat")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CAT_DEFAULT) * multiplier) {
-                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+            }else if(lowerPet.toLowerCase().contains("cat")) {
+                if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CAT_DEFAULT) * multiplier && checkCooldown()) {
+                    MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
-                if(server != null) {
-                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                        if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
-                            BlockPos spawnLocation = serverPlayer.getBlockPos();
-                            ServerWorld world = serverPlayer.getWorld();
+                    if(server != null) {
+                        for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                            if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
+                                BlockPos spawnLocation = serverPlayer.getBlockPos();
+                                ServerWorld world = serverPlayer.getWorld();
 
-                            if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
-                                if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.LIFE_LINKED_DEFAULT) * multiplier) {
-                                    LifeLinkedCatEntity cat = BlazinBlazeTwitchModEntities.LIFE_LINKED_CAT_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
+                                    if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.LIFE_LINKED_DEFAULT) * multiplier) {
+                                        LifeLinkedCatEntity cat = BlazinBlazeTwitchModEntities.LIFE_LINKED_CAT_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
-                                    if(cat != null) {
+                                        if(cat != null) {
 
-                                        cat.setTamed(true, true);
-                                        cat.setOwner(serverPlayer);
-                                        ((CatEntityAccess)cat).callSetCollarColor(DyeColor.RED);
+                                            cat.setTamed(true, true);
+                                            cat.setOwner(serverPlayer);
+                                            ((CatEntityAccess)cat).callSetCollarColor(DyeColor.RED);
 
-                                        cat.setCustomName(Text.literal(String.format("§4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Cat", username)));
+                                            cat.setCustomName(Text.literal(String.format("§4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Cat", username)));
 
-                                        OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§e§lCAT SPAWNED!");
-                                        ServerPlayNetworking.send(serverPlayer, payload);
-                                        serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 0.5F);
+                                            OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§e§lCAT SPAWNED!");
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                            serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 0.5F);
 
-                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Cat!", event.getUser().getName()), serverPlayer);
-                                    }
-                                }else {
-                                    CatEntity cat = EntityType.CAT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                            broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Cat!", event.getUser().getName()), serverPlayer);
+                                        }
+                                    }else {
+                                        CatEntity cat = EntityType.CAT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
-                                    if(cat != null) {
-                                        Random random = new Random();
+                                        if(cat != null) {
+                                            Random random = new Random();
 
-                                        DyeColor rndmElem = dyeColors.get(random.nextInt(dyeColors.size()));
-                                        RegistryKey<CatVariant> rndmElem2 = catVariants.get(random.nextInt(catVariants.size()));
+                                            DyeColor rndmElem = dyeColors.get(random.nextInt(dyeColors.size()));
+                                            RegistryKey<CatVariant> rndmElem2 = catVariants.get(random.nextInt(catVariants.size()));
 
-                                        cat.setTamed(true, true);
-                                        cat.setOwner(serverPlayer);
-                                        ((CatEntityAccess)cat).callSetCollarColor(rndmElem);
+                                            cat.setTamed(true, true);
+                                            cat.setOwner(serverPlayer);
+                                            ((CatEntityAccess)cat).callSetCollarColor(rndmElem);
 
-                                        DynamicRegistryManager registryManager = world.getRegistryManager();
-                                        Optional<RegistryEntry.Reference<CatVariant>> catVariant = registryManager.getOrThrow(RegistryKeys.CAT_VARIANT).getEntry(rndmElem2.getValue());
+                                            DynamicRegistryManager registryManager = world.getRegistryManager();
+                                            Optional<RegistryEntry.Reference<CatVariant>> catVariant = registryManager.getOrThrow(RegistryKeys.CAT_VARIANT).getEntry(rndmElem2.getValue());
 
-                                        catVariant.ifPresentOrElse(value -> ((CatEntityAccess)cat).callSetVariant(catVariant.get()),
-                                                () -> BlazinBlazeTwitchMod.LOGGER.info("Cat Variant not found!"));
+                                            catVariant.ifPresentOrElse(value -> ((CatEntityAccess)cat).callSetVariant(catVariant.get()),
+                                                    () -> BlazinBlazeTwitchMod.LOGGER.info("Cat Variant not found!"));
 
-                                        cat.setCustomName(Text.literal(String.format("%s's Cat", username)));
+                                            cat.setCustomName(Text.literal(String.format("%s's Cat", username)));
 
-                                        OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§e§lCAT SPAWNED!");
-                                        ServerPlayNetworking.send(serverPlayer, payload);
-                                        serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                                            OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§e§lCAT SPAWNED!");
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                            serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_CAT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
-                                        broadcast(String.format("§5§l[BTM]§r %s just gave you a Cat!", event.getUser().getName()), serverPlayer);
+                                            broadcast(String.format("§5§l[BTM]§r %s just gave you a Cat!", event.getUser().getName()), serverPlayer);
+                                        }
                                     }
                                 }
+                                shouldGiveImmunity(serverPlayer);
+                            }else {
+                                broadcastBlock(serverPlayer, event.getUser().getName());
                             }
-                            shouldGiveImmunity(serverPlayer);
-                        }else {
-                            broadcastBlock(serverPlayer, event.getUser().getName());
                         }
                     }
                 }
-            }
-        }
-        if(message.toLowerCase().startsWith("!parrot")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.PARROT_DEFAULT) * multiplier) {
-                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+            }else if(lowerPet.toLowerCase().contains("parrot")) {
+                if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.PARROT_DEFAULT) * multiplier && checkCooldown()) {
+                    MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
-                if(server != null) {
-                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                        if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
-                            BlockPos spawnLocation = serverPlayer.getBlockPos();
-                            ServerWorld world = serverPlayer.getWorld();
+                    if(server != null) {
+                        for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                            if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
+                                BlockPos spawnLocation = serverPlayer.getBlockPos();
+                                ServerWorld world = serverPlayer.getWorld();
 
-                            if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
-                                if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.LIFE_LINKED_DEFAULT) * multiplier) {
-                                    LifeLinkedParrotEntity parrot = BlazinBlazeTwitchModEntities.LIFE_LINKED_PARROT_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
+                                    if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.LIFE_LINKED_DEFAULT) * multiplier) {
+                                        LifeLinkedParrotEntity parrot = BlazinBlazeTwitchModEntities.LIFE_LINKED_PARROT_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
-                                    if(parrot != null) {
-                                        parrot.setTamed(true, true);
-                                        parrot.setOwner(serverPlayer);
+                                        if(parrot != null) {
+                                            parrot.setTamed(true, true);
+                                            parrot.setOwner(serverPlayer);
 
-                                        parrot.setCustomName(Text.literal(String.format("§4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Parrot", username)));
+                                            parrot.setCustomName(Text.literal(String.format("§4§l§o[LIFE-LINKED§r§4❤§r§4§l]§r %s's Parrot", username)));
 
-                                        OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§1§lPARROT SPAWNED!");
-                                        ServerPlayNetworking.send(serverPlayer, payload);
-                                        serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_PARROT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 0.5F);
+                                            OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§1§lPARROT SPAWNED!");
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                            serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_PARROT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 0.5F);
 
-                                        broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Parrot!", event.getUser().getName()), serverPlayer);
-                                    }
-                                }else {
-                                    ParrotEntity parrot = EntityType.PARROT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                                            broadcast(String.format("§5§l[BTM]§r §4§l%s just gave you a LIFE-LINKED§r§4❤§r§4§l Parrot!", event.getUser().getName()), serverPlayer);
+                                        }
+                                    }else {
+                                        ParrotEntity parrot = EntityType.PARROT.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
 
-                                    if(parrot != null) {
-                                        Random random = new Random();
+                                        if(parrot != null) {
+                                            Random random = new Random();
 
-                                        ParrotEntity.Variant rndmElem = parrotVariants.get(random.nextInt(parrotVariants.size()));
+                                            ParrotEntity.Variant rndmElem = parrotVariants.get(random.nextInt(parrotVariants.size()));
 
-                                        parrot.setTamed(true, true);
-                                        parrot.setOwner(serverPlayer);
-                                        ((ParrotEntityAccess)parrot).callSetVariant(rndmElem);
+                                            parrot.setTamed(true, true);
+                                            parrot.setOwner(serverPlayer);
+                                            ((ParrotEntityAccess)parrot).callSetVariant(rndmElem);
 
-                                        parrot.setCustomName(Text.literal(String.format("%s's Parrot", username)));
+                                            parrot.setCustomName(Text.literal(String.format("%s's Parrot", username)));
 
-                                        OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§1§lPARROT SPAWNED!");
-                                        ServerPlayNetworking.send(serverPlayer, payload);
-                                        serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_PARROT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                                            OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§1§lPARROT SPAWNED!");
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                            serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_PARROT_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
-                                        broadcast(String.format("§5§l[BTM]§r %s just gave you a Parrot!", event.getUser().getName()), serverPlayer);
+                                            broadcast(String.format("§5§l[BTM]§r %s just gave you a Parrot!", event.getUser().getName()), serverPlayer);
+                                        }
                                     }
                                 }
+                                shouldGiveImmunity(serverPlayer);
+                            }else {
+                                broadcastBlock(serverPlayer, event.getUser().getName());
                             }
-                            shouldGiveImmunity(serverPlayer);
-                        }else {
-                            broadcastBlock(serverPlayer, event.getUser().getName());
                         }
                     }
                 }
             }
         }
         if(message.toLowerCase().startsWith("!potion")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.POTION_EFFECT_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.POTION_EFFECT_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -954,7 +985,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!cbomb")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CHICKEN_BOMB_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CHICKEN_BOMB_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -967,7 +998,7 @@ public class BlazinBlazeTwitchModEvent {
                             serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_CHICKEN_EGG, SoundCategory.NEUTRAL, 1.0F, 1.0F);
                             broadcast(String.format("§5§l[BTM]§r §f§l%s just Chicken Bombed you!", event.getUser().getName()), serverPlayer);
 
-                            for(int i = 0; i < 1000; i++) {
+                            for(int i = 0; i < 500; i++) {
                                 if (world.isChunkLoaded(serverPlayer.getChunkPos().toLong())) {
                                     ChickenEntity c = EntityType.CHICKEN.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
                                     c.setCustomName(Text.of(String.format("§4§l%s's CBOMB", username)));
@@ -982,7 +1013,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!message")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.MESSAGE_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.MESSAGE_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1051,7 +1082,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!voicemessage")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.VOICE_MESSAGE_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.VOICE_MESSAGE_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1065,7 +1096,9 @@ public class BlazinBlazeTwitchModEvent {
                             stack.set(BlazinBlazeTwitchModComponents.VOICE_AUTHOR, event.getUser().getName());
                             serverPlayer.giveItemStack(stack);
                             if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.AUTOMATIC_VOICE_MESSAGE_DEFAULT) * multiplier) {
-                                stack.use(serverPlayer.getWorld(), serverPlayer, serverPlayer.getActiveHand());
+                                VoiceMessageS2CPayload payload = new VoiceMessageS2CPayload(limitedText, event.getUser().getName());
+                                ServerPlayNetworking.send(serverPlayer, payload);
+                                serverPlayer.playSoundToPlayer(BlazinBlazeTwitchModSounds.VOICE_MESSAGE_EFFECT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
                                 serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
                                 broadcast(String.format("§5§l[BTM]§r §9§l%s just sent you an AUTOMATIC voice message!", event.getUser().getName()), serverPlayer);
                                 shouldGiveImmunity(serverPlayer);
@@ -1084,7 +1117,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!ditem")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.DELETE_ITEM_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.DELETE_ITEM_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1108,7 +1141,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!dinventory")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.DELETE_INVENTORY_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.DELETE_INVENTORY_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1130,7 +1163,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!void")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.VOID_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.VOID_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1152,7 +1185,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!beddy")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.BEDDY_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.BEDDY_DEFAULT) * multiplier && checkCooldown()) {
 
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
@@ -1180,7 +1213,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!sound")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.SOUND_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.SOUND_DEFAULT) * multiplier && checkCooldown()) {
 
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
@@ -1191,7 +1224,7 @@ public class BlazinBlazeTwitchModEvent {
                             SoundEvent rndmSound = soundEffects.get(random.nextInt(soundEffects.size()));
                             serverPlayer.playSoundToPlayer(rndmSound, SoundCategory.NEUTRAL, 1.0F, 1.0F);
 
-                            SoundMessageTimer.INSTANCE.setTimerAndUser(60L, event.getUser().getName());
+                            SoundMessageTimer.INSTANCE.setTimerAndUser(100L, event.getUser().getName());
                             shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
@@ -1201,7 +1234,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!fullscreen")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.FULLSCREEN_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.FULLSCREEN_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1222,19 +1255,14 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!close")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CLOSE_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CLOSE_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
                     for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
                         if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
-
-                            CloseS2CPayload payload = new CloseS2CPayload("§c§lWINDOW CLOSED!");
+                            CloseS2CPayload payload = new CloseS2CPayload(event.getUser().getName());
                             ServerPlayNetworking.send(serverPlayer, payload);
-                            serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_CHEST_CLOSE, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                            broadcast(String.format("§5§l[BTM]§r §8§l%s just closed your window!", event.getUser().getName()), serverPlayer);
-
-                            shouldGiveImmunity(serverPlayer);
                         }else {
                             broadcastBlock(serverPlayer, event.getUser().getName());
                         }
@@ -1243,7 +1271,7 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
         if(message.toLowerCase().startsWith("!dtimer")) {
-            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.DECREASE_TIMER_DEFAULT) * multiplier) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.DECREASE_TIMER_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
                 if(server != null) {
@@ -1262,24 +1290,31 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
+        if(message.toLowerCase().startsWith("!hold")) {
+            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CHATTER_HOLD) * multiplier) {
+                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+                String lowerItem = message.substring("!hold ".length());
 
-        final Collection<Emote> globalEmotes = BlazinBlazeTwitchMod.globalEmotes;
-        final Map<String, List<Emote>> channelEmotes = BlazinBlazeTwitchMod.channelEmotes;
-        final Map<String, List<Emote>> sharedEmotes = BlazinBlazeTwitchMod.sharedEmotes;
+                if(ITEM_ALIAS.containsKey(lowerItem)) {
+                    lowerItem = ITEM_ALIAS.get(lowerItem);
+                }
 
-        if(globalEmotes != null) {
-            for (Emote emote : globalEmotes) {
-                String[] messageWords = message.split(" ");
-                for(String word : messageWords) {
-                    if(word.matches(emote.code())) {
-                        if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.EMOTE_DISPLAY_DEFAULT)) {
-                            MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+                if(server != null) {
+                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                        ServerWorld serverWorld = serverPlayer.getWorld();
+                        var entities = getCurrentChattersForId(serverWorld, serverPlayer, event.getUser().getId());
 
-                            if(server != null) {
-                                for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                                    EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
-                                    ServerPlayNetworking.send(serverPlayer, payload);
-                                    break;
+                        Identifier id = Identifier.ofVanilla(lowerItem);
+
+                        if(id != null) {
+                            Item chattedItem = Registries.ITEM.get(id);
+                            Item defaultItem = Registries.ITEM.get(Registries.ITEM.getDefaultId());
+                            if(entities.isEmpty() || chattedItem.equals(defaultItem)) {
+                                //add response code perhaps
+                            }else {
+                                ItemStack itemStack = chattedItem.getDefaultStack();
+                                for(var entity : entities) {
+                                    entity.setHeldItem(itemStack);
                                 }
                             }
                         }
@@ -1288,10 +1323,14 @@ public class BlazinBlazeTwitchModEvent {
             }
         }
 
-        if(channelEmotes != null && !channelEmotes.isEmpty()) {
-            List<Emote> emotes = channelEmotes.get(event.getChannel().getId());
-            if(emotes != null) {
-                for (Emote emote : emotes) {
+        final Collection<Emote> globalEmotes = BlazinBlazeTwitchMod.globalEmotes;
+        final Map<String, List<Emote>> channelEmotes = BlazinBlazeTwitchMod.channelEmotes;
+        final Map<String, List<Emote>> sharedEmotes = BlazinBlazeTwitchMod.sharedEmotes;
+
+        if(globalEmotes != null) {
+            int max = 0;
+            for (Emote emote : globalEmotes) {
+                if(max < 3) {
                     String[] messageWords = message.split(" ");
                     for(String word : messageWords) {
                         if(word.matches(emote.code())) {
@@ -1302,11 +1341,42 @@ public class BlazinBlazeTwitchModEvent {
                                     for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
                                         EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
                                         ServerPlayNetworking.send(serverPlayer, payload);
-                                        break;
                                     }
+                                }
+                                max++;
+                            }
+                        }
+                    }
+                }else {
+                    break;
+                }
+            }
+        }
+
+        if(channelEmotes != null && !channelEmotes.isEmpty()) {
+            List<Emote> emotes = channelEmotes.get(event.getChannel().getId());
+            if(emotes != null) {
+                int max = 0;
+                for (Emote emote : emotes) {
+                    if(max < 3) {
+                        String[] messageWords = message.split(" ");
+                        for(String word : messageWords) {
+                            if(word.matches(emote.code())) {
+                                if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.EMOTE_DISPLAY_DEFAULT)) {
+                                    MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+
+                                    if(server != null) {
+                                        for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                                            EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                        }
+                                    }
+                                    max++;
                                 }
                             }
                         }
+                    }else {
+                        break;
                     }
                 }
             }
@@ -1315,21 +1385,69 @@ public class BlazinBlazeTwitchModEvent {
         if(sharedEmotes != null && !sharedEmotes.isEmpty()) {
             List<Emote> emotes = sharedEmotes.get(event.getChannel().getId());
             if(emotes != null) {
+                int max = 0;
                 for (Emote emote : emotes) {
-                    String[] messageWords = message.split(" ");
-                    for(String word : messageWords) {
-                        if(word.matches(emote.code())) {
-                            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.EMOTE_DISPLAY_DEFAULT)) {
-                                MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+                    if(max < 3) {
+                        String[] messageWords = message.split(" ");
+                        for(String word : messageWords) {
+                            if(word.matches(emote.code())) {
+                                if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.EMOTE_DISPLAY_DEFAULT)) {
 
-                                if(server != null) {
-                                    for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                                        EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
-                                        ServerPlayNetworking.send(serverPlayer, payload);
-                                        break;
+                                    MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+
+                                    if(server != null) {
+                                        for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                                            EmoteScreenS2CPayload payload = new EmoteScreenS2CPayload(emote.id(), emote.imageType());
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                        }
                                     }
+                                    max++;
                                 }
                             }
+                        }
+                    }else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
+
+        if(server != null) {
+            for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
+                ServerWorld world = serverPlayer.getWorld();
+                BlockPos spawnLocation = serverPlayer.getBlockPos();
+
+                var entities = getCurrentChattersForId(world, serverPlayer, event.getUser().getId());
+
+                if (entities.isEmpty()) {
+                    if (ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CHATTER_SPAWN) * multiplier) {
+                        if (chatterBucket.tryConsume(1L)) {
+                            ChatterEntity chatter = BlazinBlazeTwitchModEntities.CHATTER_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
+                            chatter.setUserId(event.getUser().getId());
+                            chatter.setTamed(true, true);
+                            chatter.setOwner(serverPlayer);
+                            chatter.setUsername(event.getUser().getName());
+
+                            serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                            broadcast(String.format("§5§l[BTM]§r §d%s just spawned in as a chatter!", event.getUser().getName()), serverPlayer);
+                        }
+                    }
+                } else {
+                    String limitedText = event.getMessage().substring(0, Math.min(event.getMessage().length(), 250));
+
+                    boolean containsCommand = false;
+                    for(String command : commandNames) {
+                        if(limitedText.contains(command)) {
+                            containsCommand = true;
+                            break;
+                        }
+                    }
+
+                    if(!containsCommand) {
+                        for (var entity : entities) {
+                            entity.setChat(limitedText);
                         }
                     }
                 }
@@ -1343,6 +1461,14 @@ public class BlazinBlazeTwitchModEvent {
 
         // Create a firework at spawn for a large gift sub event
         // Note: these EventSubscriber's operate on a separate thread so we need to use Bukkit's scheduler to run this on the main thread
+    }
+
+    private List<? extends ChatterEntity> getCurrentChattersForId(ServerWorld serverWorld, ServerPlayerEntity serverPlayer, String id) {
+        return serverWorld.getEntitiesByType(TypeFilter.instanceOf(ChatterEntity.class), (entity) -> entity.getOwner() == serverPlayer && entity.getUserId().matches(id));
+    }
+
+    private boolean checkCooldown() {
+        return commandBucket.tryConsume(1L);
     }
 
     private double getProbabilityOrDefault(BlazinBlazeProbabilities probability) {

@@ -36,7 +36,7 @@ public enum BlazinBlazeProbabilities {
     FLING_DEFAULT(0.2, "flingProb"),
     NUKE_DEFAULT(0.2, "nukeProb"),
     MEGA_NUKE_DEFAULT(0.1, "megaNukeProb"),
-    TELEPORT_DEFAULT(0.1, "teleportProb"),
+    TELEPORT_DEFAULT(0.03, "teleportProb"),
     LOOT_CRATE_DEFAULT(0.2, "lootCrateProb"),
     WOLF_DEFAULT(0.7, "wolfProb"),
     LIFE_LINKED_DEFAULT(0.03, "lifeLinkedProb"),
@@ -63,8 +63,10 @@ public enum BlazinBlazeProbabilities {
     FULLSCREEN_DEFAULT(0.2, "fullscreenProb"),
     CLOSE_DEFAULT(0.01, "closeProb"),
     DECREASE_TIMER_DEFAULT(0.1, "decreaseTimerProb"),
-    EMOTE_DISPLAY_DEFAULT(0.7, "emoteDisplayProb"),
-    IMMUNITY_DEFAULT(0.05, "immunityProb");
+    EMOTE_DISPLAY_DEFAULT(0.4, "emoteDisplayProb"),
+    IMMUNITY_DEFAULT(0.005, "immunityProb"),
+    CHATTER_SPAWN(1, "chatterSpawn"),
+    CHATTER_HOLD(1, "chatterHold");
 
     public final double probabilty;
     public final String key;

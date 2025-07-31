@@ -52,8 +52,14 @@ public class BlazinBlazeEmoteHUD implements HudElement {
     }
 
     public void setEmoteLocation(String id) {
-        maxWidth = MinecraftClient.getInstance().getWindow().getWidth();
-        maxHeight = MinecraftClient.getInstance().getWindow().getHeight();
+        maxWidth = MinecraftClient.getInstance().getWindow().getScaledWidth();
+        maxHeight = MinecraftClient.getInstance().getWindow().getScaledHeight();
+        if(maxWidth < 0) {
+            maxWidth = 0;
+        }
+        if(maxHeight < 0) {
+            maxHeight = 0;
+        }
         Random random = new Random();
         int x = (maxWidth - random.nextInt(maxWidth)) / 2;
         int y = (maxHeight - random.nextInt(maxHeight)) / 2;

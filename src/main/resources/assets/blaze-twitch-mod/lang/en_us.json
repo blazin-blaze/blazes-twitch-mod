@@ -3,6 +3,7 @@
   "entity.blaze-twitch-mod.loot_crate_entity": "§lLoot Crate",
   "entity.blaze-twitch-mod.beddy_entity": "§lBeddy",
   "entity.blaze-twitch-mod.nuclear_tnt_entity": "§a§lNuclear TNT",
+  "entity.blaze-twitch-mod.chatter_entity": "§5§lLChatter",
 
   "entity.blaze-twitch-mod.life_linked_wolf": "§4§lLife-linked Wolf",
   "entity.blaze-twitch-mod.life_linked_parrot": "§4§lLife-linked Parrot",

@@ -1,8 +1,9 @@
 package net.blazinblaze.blazetwitchmod;
 
+import com.github.philippheuer.credentialmanager.CredentialManager;
 import com.github.philippheuer.credentialmanager.domain.OAuth2Credential;
 import com.github.philippheuer.events4j.simple.SimpleEventHandler;
-import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.ITwitchClient;
 import com.github.twitch4j.TwitchClientBuilder;
 import com.github.twitch4j.helix.domain.UserList;
 import com.netflix.hystrix.HystrixCommand;
@@ -11,6 +12,8 @@ import io.github.iprodigy.bttv.api.BttvApiFactory;
 import io.github.iprodigy.bttv.api.domain.User;
 import io.github.iprodigy.bttv.common.Emote;
 import io.github.iprodigy.bttv.common.Provider;
+import joptsimple.internal.Strings;
+import net.blazinblaze.blazetwitchmod.auth.BlazinBlazeAuth;
 import net.blazinblaze.blazetwitchmod.block.BlazinBlazeTwitchModBlocks;
 import net.blazinblaze.blazetwitchmod.config.BlazinBlazeYAML;
 import net.blazinblaze.blazetwitchmod.data.BlazinBlazeAttachmentTypes;
@@ -33,6 +36,7 @@ import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.SpawnReason;
@@ -43,17 +47,24 @@ import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.util.ClickType;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionTypes;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.text.TextAction;
 import java.io.File;
+import java.net.URI;
+import java.time.Instant;
 import java.util.*;
 
 public class BlazinBlazeTwitchMod implements ModInitializer {
@@ -66,7 +77,8 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 	public static final RegistryEntry<StatusEffect> IMMUNITY_SHIELD_EFFECT =
 			Registry.registerReference(Registries.STATUS_EFFECT, Identifier.of(MOD_ID, "immunity_shield_effect"), new ImmunityShieldEffect());
 
-	private TwitchClient client;
+	private static ITwitchClient client;
+	public static String uri;
 
 	public static MinecraftServer serverRef;
 	public static BetterTTV bAPI;
@@ -75,6 +87,8 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 	public static Map<String, List<Emote>> sharedEmotes = new HashMap<>();
 	public static boolean hasLoadedClient = false;
 	public static BlazinBlazeYAML config;
+
+	public static final String CLIENT_ID = "hukytbnqolhx8d6t4ofj7mx0o8ezeu";
 
 	@Override
 	public void onInitialize() {
@@ -109,15 +123,11 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		config = new BlazinBlazeYAML(configFileYaml);
 		config.load();
 
-		String clientName = config.getClientInfo(BlazinBlazeYAML.clientName);
-		String clientID = config.getClientInfo(BlazinBlazeYAML.clientID);
-		String clientSecret = config.getClientInfo(BlazinBlazeYAML.clientSecret);
-		String channelToken = config.getClientInfo(BlazinBlazeYAML.channelToken);
+		//String clientName = config.getClientInfo(BlazinBlazeYAML.clientName);
+		//String channelToken = config.getClientInfo(BlazinBlazeYAML.channelToken);
 
-		if((clientName != null && !clientName.equals(BlazinBlazeYAML.defaultClientName)) &&
-				(clientID != null && !clientID.equals(BlazinBlazeYAML.defaultClientID)) &&
-				(clientSecret != null && !clientSecret.equals(BlazinBlazeYAML.defaultClientSecret)) &&
-				(channelToken != null && !channelToken.equals(BlazinBlazeYAML.defaultChannelToken))) {
+		/*if((clientName != null && !clientName.equals(BlazinBlazeYAML.defaultClientName) && !clientName.isEmpty()) &&
+				(channelToken != null && !channelToken.equals(BlazinBlazeYAML.defaultChannelToken) && !channelToken.isEmpty())) {
 			// Build credential when possible (old OAuth)
 			String token = channelToken;
 			OAuth2Credential credential = StringUtils.isNotBlank(token) ? new OAuth2Credential("twitch", token) : null;
@@ -159,10 +169,26 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		}else {
 			LOGGER.error("ClientID, ClientName, and/or ClientSecret in config file is blank/null.\n" +
 					"Please check the config file and fill in this information for the mod to work correctly.");
-		}
+		}*/
 
 		ServerLifecycleEvents.SERVER_STARTED.register((server -> {
 			serverRef = server;
+
+			var channelToken = config.getClientInfo(BlazinBlazeYAML.channelToken);
+			var tokenExpires = config.getClientInfo(BlazinBlazeYAML.tokenExpires);
+
+			if(channelToken instanceof String token && tokenExpires instanceof Number) {
+				OAuth2Credential credential = (!token.isEmpty()) ? new OAuth2Credential("twitch", token) : null;
+				if(Instant.now().getEpochSecond() < (tokenExpires instanceof Long ? (long)tokenExpires : (int)tokenExpires) && credential != null) {
+					BlazinBlazeAuth.grabClient(credential);
+				}else {
+					createNewToken();
+					server.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r Server OAuth token has expired / was invalid. Re-authenticating."), false);
+				}
+			}else {
+				createNewToken();
+			}
+
 			ServerWorld overworld = server.getOverworld();
 			MultiplierTick.MultiplierTimer.setMultiplier(overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.MULTIPLIER_ATTACHMENT_TYPE, () -> MultiplierAttachmentData.DEFAULT).integer());
 			MultiplierTick.MultiplierTimer.setTimer(overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, () -> TimerAttachmentData.DEFAULT).integer());
@@ -170,11 +196,28 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 
 		ServerLifecycleEvents.SERVER_STOPPED.register((server -> {
 			serverRef = null;
+			if(client != null) {
+				client.close();
+				client = null;
+				hasLoadedClient = false;
+			}
 		}));
 
 		ServerPlayerEvents.JOIN.register((player -> {
-			if(!hasLoadedClient) {
-				player.sendMessage(Text.of("§5§l[BTM]§r A connection to your Twitch channel has not yet been established. Please confirm you have correctly set up the config file with your client ID, client secret, channel token, and channel name. Once done, restart Minecraft."));
+			if(serverRef != null) {
+				if(!hasLoadedClient) {
+					if(serverRef.isSingleplayer()) {
+						sendFailMessages(player);
+					}else {
+						if(serverRef.getPlayerManager().isOperator(player.getGameProfile()) || serverRef.isHost(player.getGameProfile())) {
+							sendFailMessages(player);
+						}else {
+							player.sendMessage(Text.of("§5§l[BTM]§r A server operator/host as not yet properly configured the connection to their Twitch channel."));
+						}
+					}
+				}else {
+					sendSuccessMessage();
+				}
 			}
 		}));
 
@@ -197,5 +240,53 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 				}
 			}
 		});
+	}
+
+	private static void sendFailMessages(ServerPlayerEntity player) {
+		player.sendMessage(Text.of("§5§l[BTM]§r A connection to your Twitch channel has not yet been established."));
+		if(uri != null) {
+			player.sendMessage(Text.literal("§5§l[BTM]§r If you have not authorized the mod yet, please do so by clicking ").append("§n§lhere.").setStyle(Style.EMPTY.withClickEvent(new ClickEvent.OpenUrl(URI.create(uri)))));
+		}
+	}
+
+	private static void sendSuccessMessage() {
+		serverRef.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r §aConnection to Twitch channel established. Have fun!"), false);
+	}
+
+	private static void createNewToken() {
+		uri = BlazinBlazeAuth.grabOAuth();
+		if(uri != null) {
+			Util.getOperatingSystem().open(URI.create(uri));
+            LOGGER.warn("IMPORTANT: Please navigate to the opened URL to authorize your Twitch channel. If a link was not opened, please manually authorize here: {}", uri);
+		}
+	}
+
+	public static void setupTwitchClient(ITwitchClient client, String clientName) {
+		BlazinBlazeTwitchMod.client = client;
+		BlazinBlazeTwitchMod.client.getChat().joinChannel(clientName);
+		BlazinBlazeTwitchMod.client.getClientHelper().enableFollowEventListener(clientName);
+		BlazinBlazeTwitchMod.client.getClientHelper().enableStreamEventListener(clientName);
+
+		client.getEventManager().getEventHandler(SimpleEventHandler.class).registerListener(new BlazinBlazeTwitchModEvent());
+
+		bAPI = BttvApiFactory.build();
+		globalEmotes = BlazinBlazeTwitchMod.bAPI.getGlobalEmotes();
+		HystrixCommand<UserList> hystrixUsers = client.getHelix().getUsers(null, null, List.of(clientName));
+		List<com.github.twitch4j.helix.domain.User> usersList = hystrixUsers.execute().getUsers();
+		for(com.github.twitch4j.helix.domain.User user : usersList) {
+			try {
+				User userttv = bAPI.getUser(Provider.TWITCH, user.getId());
+				channelEmotes.put(user.getId(), userttv.channelEmotes());
+				sharedEmotes.put(user.getId(), userttv.sharedEmotes());
+			}catch(UnsupportedOperationException e) {
+				LOGGER.warn("Could not find BetterTTV user for the specified ID.");
+			}
+		}
+		if(BlazinBlazeTwitchMod.client != null) {
+			hasLoadedClient = true;
+		}
+		if(serverRef != null) {
+			sendSuccessMessage();
+		}
 	}
 }

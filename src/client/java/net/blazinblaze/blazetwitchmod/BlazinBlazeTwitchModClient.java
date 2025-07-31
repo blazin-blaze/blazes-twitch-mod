@@ -4,10 +4,9 @@ import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.blazinblaze.blazetwitchmod.entity.model.BlazinBlazeModelLayers;
 import net.blazinblaze.blazetwitchmod.entity.renderer.*;
 import net.blazinblaze.blazetwitchmod.networking.*;
-import net.blazinblaze.blazetwitchmod.screen.custom.BlazinBlazeEmoteHUD;
-import net.blazinblaze.blazetwitchmod.screen.custom.BlazinBlazeMailScreen;
-import net.blazinblaze.blazetwitchmod.screen.custom.BlazinBlazeMultiplierHUD;
+import net.blazinblaze.blazetwitchmod.screen.custom.*;
 import net.blazinblaze.blazetwitchmod.util.CloseEmoteTimer;
+import net.blazinblaze.blazetwitchmod.util.CloseWindowTimer;
 import net.blazinblaze.blazetwitchmod.util.EmoteTextures;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -17,6 +16,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.gui.hud.InGameHud;
 import net.minecraft.client.toast.SystemToast;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -43,7 +43,10 @@ public class BlazinBlazeTwitchModClient implements ClientModInitializer {
 		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.LIFE_LINKED_PARROT_ENTITY, LifeLinkedParrotRenderer::new);
 		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.LIFE_LINKED_FISH_ENTITY, LifeLinkedFishRenderer::new);
 
+		EntityRendererRegistry.register(BlazinBlazeTwitchModEntities.CHATTER_ENTITY, ChatterEntityRenderer::new);
+
 		CloseEmoteTimer.register();
+		CloseWindowTimer.register();
 		HudElementRegistry.addFirst(Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "emote-hud"), BlazinBlazeEmoteHUD.getInstance());
 		HudElementRegistry.addFirst(Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "multiplier-hud"), BlazinBlazeMultiplierHUD.getInstance());
 
@@ -90,9 +93,11 @@ public class BlazinBlazeTwitchModClient implements ClientModInitializer {
 		});
 
 		ClientPlayNetworking.registerGlobalReceiver(CloseS2CPayload.ID, (payload, context) -> {
-			InGameHud hud = context.client().inGameHud;
-			hud.setOverlayMessage(Text.literal(payload.message()), true);
-			context.client().getWindow().close();
+			context.client().player.playSoundToPlayer(SoundEvents.BLOCK_GLASS_BREAK, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+			context.client().setScreen(
+					new BlazinBlazeCloseScreen(Text.empty(), payload.user())
+			);
+			CloseWindowTimer.INSTANCE.setTimerAndUser(100L);
 		});
 
 		ClientLifecycleEvents.CLIENT_STOPPING.register((client -> {

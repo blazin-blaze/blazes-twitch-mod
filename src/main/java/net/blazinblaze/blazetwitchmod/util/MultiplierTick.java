@@ -56,15 +56,19 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
         }
 
         public static void eventBoost(int value) {
-            if(value + getTimer() > 20*600) {
+            boolean remainingOver = false;
+            if((20*value + getTimer()) > 20*600) {
                 value = 20*600 - getTimer();
+                remainingOver = true;
             }
-            timer.add(value);
+            BlazinBlazeTwitchMod.LOGGER.info(String.valueOf(timer.intValue()));
+            timer.add(remainingOver ? value : 20*value);
+            BlazinBlazeTwitchMod.LOGGER.info(String.valueOf(timer.intValue()));
             MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
             if(server != null) {
                 ServerWorld overworld = server.getOverworld();
                 TimerAttachmentData data = overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, () -> TimerAttachmentData.DEFAULT);
-                overworld.setAttached(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, data.addInt(value));
+                overworld.setAttached(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, data.addInt(remainingOver ? value : 20*value));
             }
         }
 
@@ -97,7 +101,7 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
         }
 
         public static void setMultiplier(int value) {
-            timer.setValue(value);
+            multiplier.setValue(value);
         }
 
     }

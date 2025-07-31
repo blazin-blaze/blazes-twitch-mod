@@ -101,12 +101,12 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
             Entity leashedEntity = this.getLeashHolder();
             if(leashedEntity != null) {
                 if(leashedEntity instanceof PlayerEntity plr) {
-                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 20*getDestructionTimer(), 255));
-                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 20*getDestructionTimer()));
+                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, -1, 255));
+                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, -1));
                     this.attachLeash(plr, true);
-                    if(this.distanceTo(leashedEntity) >= 12) {
-                        this.teleport(leashedEntity.getX(), leashedEntity.getY() + 10, leashedEntity.getZ(), false);
-                    }
+                    //if(this.distanceTo(leashedEntity) >= 12.0F) {
+                        //this.teleport(leashedEntity.getX(), leashedEntity.getY() + 10, leashedEntity.getZ(), false);
+                    //}
                 }
             }else {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
@@ -114,16 +114,21 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
                     PlayerManager manager = server.getPlayerManager();
                     ServerPlayerEntity player = manager.getPlayer(java.util.UUID.fromString(getUUID()));
                     if(player != null && !player.isDisconnected()) {
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 20*getDestructionTimer(), 255));
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, 20*getDestructionTimer()));
+                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, -1, 255));
+                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, -1));
                         this.attachLeash(player, true);
-                        if(this.distanceTo(player) >= 12) {
-                            this.teleport(player.getX(), player.getY() + 10, player.getZ(), false);
-                        }
+                        //if(this.distanceTo(player) >= 12.0F) {
+                            //this.teleport(player.getX(), player.getY() + 10, player.getZ(), false);
+                        //}
                     }
                 }
             }
         }
+    }
+
+    @Override
+    public double getLeashSnappingDistance() {
+        return (double)100000000000.0F;
     }
 
     public int getDestructionTimer() {

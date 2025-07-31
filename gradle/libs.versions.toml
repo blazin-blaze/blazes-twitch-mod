@@ -1,0 +1,6 @@
+[libraries]
+jspecify = { module = "org.jspecify:jspecify", version = "1.0.0" }
+resilience4j-all = { module = "io.github.resilience4j:resilience4j-all", version = "2.3.0" }
+
+[plugins]
+configuration = { id = "me.philippheuer.configuration", version = "0.16.3" }

@@ -5,7 +5,7 @@
 	"name": "BlazinBlaze Twitch Mod",
 	"description": "Adds Blazin Twitch Integration to Minecraft!",
 	"authors": [
-		"Me!"
+		"BlazinBlaze"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
@@ -34,9 +34,10 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.16.10",
-		"minecraft": "~1.21.4",
+		"minecraft": ">=1.21.6 <=1.21.8",
 		"java": ">=21",
-		"fabric-api": "*"
+		"fabric-api": "*",
+		"twitch4j": "*"
 	},
 	"suggests": {
 		"another-mod": "*"

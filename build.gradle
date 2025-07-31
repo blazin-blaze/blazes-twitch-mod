@@ -1,6 +1,7 @@
 plugins {
 	id 'fabric-loom' version '1.11-SNAPSHOT'
 	id 'maven-publish'
+	alias(libs.plugins.configuration)
 }
 
 version = project.mod_version
@@ -46,10 +47,23 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation "com.github.twitch4j:twitch4j-fabric:1.24.0+1.10.0"
+	modImplementation "com.github.twitch4j:twitch4j-fabric:1.25.0+1.11.0"
 	implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
+	include group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
 	modImplementation "io.github.iprodigy.bttv:bttv4j-api:1.0.0"
-	modImplementation 'org.yaml:snakeyaml:2.4' // Use the latest stable versio
+	include "io.github.iprodigy.bttv:bttv4j-api:1.0.0"
+	include "io.github.iprodigy.bttv:bttv4j-common:1.0.0"
+	modImplementation 'org.yaml:snakeyaml:2.4'
+	include 'org.yaml:snakeyaml:2.4'
+	include libs.jspecify
+	include "io.github.resilience4j:resilience4j-core:2.3.0"
+	include "io.github.resilience4j:resilience4j-ratelimiter:2.3.0"
+	include "io.github.resilience4j:resilience4j-circuitbreaker:2.3.0"
+	include "io.github.resilience4j:resilience4j-bulkhead:2.3.0"
+	include "io.github.resilience4j:resilience4j-timelimiter:2.3.0"
+	include "io.github.resilience4j:resilience4j-cache:2.3.0"
+	include "io.github.resilience4j:resilience4j-retry:2.3.0"
+	include "io.github.resilience4j:resilience4j-feign:2.3.0"
 }
 
 processResources {
