@@ -18,15 +18,11 @@ import java.util.Map;
 public class BlazinBlazeYAML {
 
     public static final String channelToken = "channelToken";
-    public static final String tokenExpires = "tokenExpires";
+    public static final String refreshToken = "refreshToken";
+    public static final String refreshTokenExpiry = "refreshTokenExpiry";
     public static final String clientConfigKey = "clientConfig";
 
     public static final String probabilityConfigKey = "probabilityConfig";
-
-    // static final String defaultClientID = "[Place your ClientID here (Create this in the Twitch Developer portal through an app)]";
-    //public static final String defaultClientSecret = "[Place your Client Secret here (Create this in the Twitch Developer portal through an app)]";
-    public static final String defaultChannelToken = "[Place your Channel OAuth Token here (This provides proper channel permissions to the mod. Create this using following link and replace [CLIENTID] with your client id: https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=[CLIENTID]&redirect_uri=http://localhost&scope=chat%3Aread%20bits%3Aread%20channel%3Aread%3Acharity%20channel%3Aread%3Ahype_train%20channel%3Aread%3Apolls%20channel%3Aread%3Apredictions%20channel%3Aread%3Aredemptions%20channel%3Aread%3Asubscriptions&state=c3ab8aa609ea11e793ae92361f002671&20moderator%3Aread%3Afollowers)]";
-    public static final String defaultClientName = "[Place your Channel Name here (Your Twitch Username)]";
 
     private final File file;
     private Map<String, Map<String, Object>> config = new LinkedHashMap<String, Map<String, Object>>();
@@ -38,7 +34,8 @@ public class BlazinBlazeYAML {
 
     private void setDefaults() {
         clientConfig.put(channelToken, "");
-        clientConfig.put(tokenExpires, 0L);
+        clientConfig.put(refreshToken, "");
+        clientConfig.put(refreshTokenExpiry, 0L);
 
         for (BlazinBlazeProbabilities probability : BlazinBlazeProbabilities.values()) {
             probabilityConfig.put(probability.getKey(), probability.getProbabilty());
@@ -76,8 +73,14 @@ public class BlazinBlazeYAML {
     }
 
     public void setClientInfo(String key, Object val) {
-        if(key.equals(channelToken) || key.equals(tokenExpires)) {
-            clientConfig.put(key, val);
+        if(key.equals(channelToken) || key.equals(refreshToken)) {
+            if(val instanceof String) {
+                clientConfig.put(key, val);
+            }
+        }else if (key.equals(refreshTokenExpiry)) {
+            if(val instanceof Integer || val instanceof Long) {
+                clientConfig.put(key, val);
+            }
         }
     }
 

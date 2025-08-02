@@ -10,18 +10,17 @@ import com.github.twitch4j.TwitchClientBuilder;
 import com.github.twitch4j.auth.domain.TwitchScopes;
 import com.github.twitch4j.auth.providers.TwitchIdentityProvider;
 import com.github.twitch4j.common.util.ThreadUtils;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.blazinblaze.blazetwitchmod.config.BlazinBlazeYAML;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class BlazinBlazeAuth { ;
 
-    public static String grabOAuth() {
+    public static List<String> grabOAuth() {
         Bot bot = new Bot();
         DeviceAuthorization req = bot.getController().startOAuth2DeviceAuthorizationGrantType(
                 bot.getIdentityProvider(),
@@ -29,6 +28,14 @@ public class BlazinBlazeAuth { ;
                 resp -> {
                     OAuth2Credential token = resp.getCredential();
                     if (token != null) {
+                        BlazinBlazeYAML config = BlazinBlazeTwitchMod.config;
+                        if(config != null) {
+                            config.setClientInfo(BlazinBlazeYAML.channelToken, token.getAccessToken());
+                            config.setClientInfo(BlazinBlazeYAML.refreshToken, token.getRefreshToken());
+                            config.setClientInfo(BlazinBlazeYAML.refreshTokenExpiry, Instant.now().getEpochSecond() + 2592000L);
+                            config.save();
+                        }
+                        BlazinBlazeTwitchMod.setCredential(token);
                         bot.start(token);
                     } else {
                         BlazinBlazeTwitchMod.LOGGER.warn("Could not obtain device flow token due to {}", resp.getError());
@@ -36,10 +43,11 @@ public class BlazinBlazeAuth { ;
                 }
         );
         //BlazinBlazeTwitchMod.LOGGER.info("The user should now visit: {}", req.getCompleteUri());
-        return req.getCompleteUri();
+        return List.of(req.getCompleteUri(), req.getDeviceCode());
     }
 
     public static void grabClient(OAuth2Credential credential) {
+        BlazinBlazeTwitchMod.setCredential(credential);
         Bot bot = new Bot();
         bot.start(credential);
     }
@@ -70,12 +78,6 @@ public class BlazinBlazeAuth { ;
                     .withDefaultAuthToken(credential)
                     .build();
             if(this.client != null) {
-                BlazinBlazeYAML config = BlazinBlazeTwitchMod.config;
-                if(config != null) {
-                    config.setClientInfo(BlazinBlazeYAML.channelToken, credential.getAccessToken());
-                    config.setClientInfo(BlazinBlazeYAML.tokenExpires, credential.getExpiresIn() + Instant.now().getEpochSecond());
-                    config.save();
-                }
                 BlazinBlazeTwitchMod.setupTwitchClient(this.client, credential.getUserName());
             }
         }

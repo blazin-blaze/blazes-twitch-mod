@@ -1012,7 +1012,7 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.toLowerCase().startsWith("!message")) {
+        if(message.toLowerCase().startsWith("!message") || message.toLowerCase().startsWith("!msg")) {
             if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.MESSAGE_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
@@ -1081,7 +1081,7 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-        if(message.toLowerCase().startsWith("!voicemessage")) {
+        if(message.toLowerCase().startsWith("!voicemessage") || message.toLowerCase().startsWith("!vm")) {
             if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.VOICE_MESSAGE_DEFAULT) * multiplier && checkCooldown()) {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 

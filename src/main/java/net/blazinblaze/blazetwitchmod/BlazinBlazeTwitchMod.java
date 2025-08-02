@@ -2,9 +2,11 @@ package net.blazinblaze.blazetwitchmod;
 
 import com.github.philippheuer.credentialmanager.CredentialManager;
 import com.github.philippheuer.credentialmanager.domain.OAuth2Credential;
+import com.github.philippheuer.credentialmanager.identityprovider.OAuth2IdentityProvider;
 import com.github.philippheuer.events4j.simple.SimpleEventHandler;
 import com.github.twitch4j.ITwitchClient;
 import com.github.twitch4j.TwitchClientBuilder;
+import com.github.twitch4j.auth.providers.TwitchIdentityProvider;
 import com.github.twitch4j.helix.domain.UserList;
 import com.netflix.hystrix.HystrixCommand;
 import io.github.iprodigy.bttv.api.BetterTTV;
@@ -79,13 +81,14 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 
 	private static ITwitchClient client;
 	public static String uri;
+	private static String code;
+	private static OAuth2Credential clientCredential;
 
 	public static MinecraftServer serverRef;
 	public static BetterTTV bAPI;
 	public static Collection<io.github.iprodigy.bttv.common.Emote> globalEmotes;
 	public static Map<String, List<Emote>> channelEmotes = new HashMap<>();
-	public static Map<String, List<Emote>> sharedEmotes = new HashMap<>();
-	public static boolean hasLoadedClient = false;
+	public static Map<String, List<Emote>> sharedEmotes = new HashMap<>();;
 	public static BlazinBlazeYAML config;
 
 	public static final String CLIENT_ID = "hukytbnqolhx8d6t4ofj7mx0o8ezeu";
@@ -174,18 +177,12 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		ServerLifecycleEvents.SERVER_STARTED.register((server -> {
 			serverRef = server;
 
-			var channelToken = config.getClientInfo(BlazinBlazeYAML.channelToken);
-			var tokenExpires = config.getClientInfo(BlazinBlazeYAML.tokenExpires);
+			OAuth2Credential validCredential = isTokenValid();
 
-			if(channelToken instanceof String token && tokenExpires instanceof Number) {
-				OAuth2Credential credential = (!token.isEmpty()) ? new OAuth2Credential("twitch", token) : null;
-				if(Instant.now().getEpochSecond() < (tokenExpires instanceof Long ? (long)tokenExpires : (int)tokenExpires) && credential != null) {
-					BlazinBlazeAuth.grabClient(credential);
-				}else {
-					createNewToken();
-					server.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r Server OAuth token has expired / was invalid. Re-authenticating."), false);
-				}
+			if(validCredential != null) {
+				BlazinBlazeAuth.grabClient(validCredential);
 			}else {
+				server.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r Server OAuth token has expired / is invalid. Authenticating."), false);
 				createNewToken();
 			}
 
@@ -199,22 +196,22 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 			if(client != null) {
 				client.close();
 				client = null;
-				hasLoadedClient = false;
 			}
 		}));
 
 		ServerPlayerEvents.JOIN.register((player -> {
 			if(serverRef != null) {
-				if(!hasLoadedClient) {
+				if(!isClientLoaded()) {
 					if(serverRef.isSingleplayer()) {
 						sendFailMessages(player);
 					}else {
 						if(serverRef.getPlayerManager().isOperator(player.getGameProfile()) || serverRef.isHost(player.getGameProfile())) {
 							sendFailMessages(player);
 						}else {
-							player.sendMessage(Text.of("§5§l[BTM]§r A server operator/host as not yet properly configured the connection to their Twitch channel."));
+							player.sendMessage(Text.of("§5§l[BTM]§r §cA server operator/host has not yet properly configured the connection to their Twitch channel."));
 						}
 					}
+					LOGGER.warn("Connection to Twitch channel has not yet been established.");
 				}else {
 					sendSuccessMessage();
 				}
@@ -242,10 +239,92 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		});
 	}
 
+	public static void closeTwitchClient() {
+		if(client != null) {
+			client.close();
+			client = null;
+		}
+	}
+
+	public static void setCredential(OAuth2Credential credential) {
+		clientCredential = credential;
+	}
+
+	public static boolean updateCredential(OAuth2Credential newCredential) {
+		if(clientCredential != null) {
+			clientCredential.updateCredential(newCredential);
+			return true;
+		}
+		return false;
+	}
+
+	public static OAuth2Credential refreshToken(TwitchIdentityProvider provider, String token) {
+		var refreshToken = config.getClientInfo(BlazinBlazeYAML.refreshToken);
+		var refreshTokenExpiry = config.getClientInfo(BlazinBlazeYAML.refreshTokenExpiry);
+
+		if(refreshToken instanceof String reToken) {
+			if(refreshTokenExpiry instanceof Long || refreshTokenExpiry instanceof Integer) {
+				if(Instant.now().getEpochSecond() < (refreshTokenExpiry instanceof Long ? (long)refreshTokenExpiry : (int)refreshTokenExpiry)) {
+					OAuth2Credential credWithRefresh = (!reToken.isEmpty()) ? new OAuth2Credential("twitch", token, reToken, null, null, null, null, null) : null;
+					if(credWithRefresh != null) {
+						Optional<OAuth2Credential> tempCredential = provider.refreshCredential(credWithRefresh);
+						OAuth2Credential newCredential = tempCredential.orElse(null);
+						if(newCredential != null) {
+							config.setClientInfo(BlazinBlazeYAML.channelToken, newCredential.getAccessToken());
+							config.setClientInfo(BlazinBlazeYAML.refreshToken, newCredential.getRefreshToken());
+							config.setClientInfo(BlazinBlazeYAML.refreshTokenExpiry, Instant.now().getEpochSecond() + 2592000L);
+							config.save();
+							return newCredential;
+						}
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private static OAuth2Credential isTokenValid() {
+		if(config != null) {
+			var channelToken = config.getClientInfo(BlazinBlazeYAML.channelToken);
+
+			if(channelToken instanceof String token) {
+				TwitchIdentityProvider provider = new TwitchIdentityProvider(BlazinBlazeTwitchMod.CLIENT_ID, null, null);
+				OAuth2Credential credential = (!token.isEmpty()) ? new OAuth2Credential("twitch", token) : null;
+				if(credential != null) {
+					Optional<Boolean> isValid = provider.isCredentialValid(credential);
+					if(isValid.isPresent() && isValid.get()) {
+						return credential;
+					}else {
+                        return refreshToken(provider, token);
+					}
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private static boolean isClientLoaded() {
+		if(BlazinBlazeTwitchMod.client != null) {
+			if(BlazinBlazeTwitchMod.code != null) {
+				TwitchIdentityProvider provider = new TwitchIdentityProvider(BlazinBlazeTwitchMod.CLIENT_ID, null, null);
+				return provider.getDeviceAccessToken(code).getCredential() != null;
+			}else {
+				OAuth2Credential validCredential = isTokenValid();
+				return validCredential != null;
+			}
+		}
+
+		return false;
+	}
+
 	private static void sendFailMessages(ServerPlayerEntity player) {
-		player.sendMessage(Text.of("§5§l[BTM]§r A connection to your Twitch channel has not yet been established."));
+		player.sendMessage(Text.of("§5§l[BTM]§r §cA connection to your Twitch channel has not yet been established."));
 		if(uri != null) {
-			player.sendMessage(Text.literal("§5§l[BTM]§r If you have not authorized the mod yet, please do so by clicking ").append("§n§lhere.").setStyle(Style.EMPTY.withClickEvent(new ClickEvent.OpenUrl(URI.create(uri)))));
+			player.sendMessage(Text.literal("§5§l[BTM]§r §cIf you have not authorized the mod yet, please do so by clicking ").append("§c§n§lhere.").setStyle(Style.EMPTY.withClickEvent(new ClickEvent.OpenUrl(URI.create(uri)))));
+		}else {
+			player.sendMessage(Text.literal("§5§l[BTM]§r §cAuthentication link not available. Try restarting the server or your Minecraft instance."));
 		}
 	}
 
@@ -253,11 +332,24 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		serverRef.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r §aConnection to Twitch channel established. Have fun!"), false);
 	}
 
-	private static void createNewToken() {
-		uri = BlazinBlazeAuth.grabOAuth();
+	public static void createNewToken() {
+		List<String> info = BlazinBlazeAuth.grabOAuth();
+		uri = info.getFirst();
+		code = info.get(1);
+
 		if(uri != null) {
 			Util.getOperatingSystem().open(URI.create(uri));
-            LOGGER.warn("IMPORTANT: Please navigate to the opened URL to authorize your Twitch channel. If a link was not opened, please manually authorize here: {}", uri);
+            if(serverRef != null) {
+				serverRef.getPlayerManager().broadcast(Text.empty(), (player) -> {
+					if(!serverRef.isSingleplayer()) {
+						if(!serverRef.getPlayerManager().isOperator(player.getGameProfile()) && !serverRef.isHost(player.getGameProfile())) {
+							return Text.literal("§5§l[BTM]§r §cA server operator or host must authorize the mod to enable Twitch integrations.");
+						}
+					}
+					return Text.literal("§5§l[BTM]§r §cPlease authorize the mod through the opened url or by clicking ").append("§c§n§lhere.").setStyle(Style.EMPTY.withClickEvent(new ClickEvent.OpenUrl(URI.create(uri))));
+				}, false);
+			}
+			LOGGER.warn("IMPORTANT: Please navigate to the opened URL to authorize your Twitch channel. If a link was not opened, please manually authorize here: {}", uri);
 		}
 	}
 
@@ -280,10 +372,17 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 				sharedEmotes.put(user.getId(), userttv.sharedEmotes());
 			}catch(UnsupportedOperationException e) {
 				LOGGER.warn("Could not find BetterTTV user for the specified ID.");
+				if(serverRef != null) {
+					serverRef.getPlayerManager().broadcast(Text.empty(), (player) -> {
+						if(!serverRef.isSingleplayer()) {
+							if(!serverRef.getPlayerManager().isOperator(player.getGameProfile()) && !serverRef.isHost(player.getGameProfile())) {
+								return Text.of("§5§l[BTM]§r §cA server operator or host has not yet properly configured BetterTTV emote integration.");
+							}
+						}
+						return Text.of("§5§l[BTM]§r §cBetterTTV emote integration not established. Have you set up a BTTV account?");
+					}, false);
+				}
 			}
-		}
-		if(BlazinBlazeTwitchMod.client != null) {
-			hasLoadedClient = true;
 		}
 		if(serverRef != null) {
 			sendSuccessMessage();
