@@ -16,6 +16,7 @@ import io.github.iprodigy.bttv.common.Emote;
 import io.github.iprodigy.bttv.common.Provider;
 import joptsimple.internal.Strings;
 import net.blazinblaze.blazetwitchmod.auth.BlazinBlazeAuth;
+import net.blazinblaze.blazetwitchmod.auth.CheckTokenRefresh;
 import net.blazinblaze.blazetwitchmod.block.BlazinBlazeTwitchModBlocks;
 import net.blazinblaze.blazetwitchmod.config.BlazinBlazeYAML;
 import net.blazinblaze.blazetwitchmod.data.BlazinBlazeAttachmentTypes;
@@ -34,6 +35,7 @@ import net.blazinblaze.blazetwitchmod.util.SoundMessageTimer;
 import net.blazinblaze.blazetwitchmod.util.TeleportTimer;
 import net.fabricmc.api.ModInitializer;
 
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -68,6 +70,10 @@ import java.io.File;
 import java.net.URI;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 public class BlazinBlazeTwitchMod implements ModInitializer {
 	public static final String MOD_ID = "blaze-twitch-mod";
@@ -92,6 +98,9 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 	public static BlazinBlazeYAML config;
 
 	public static final String CLIENT_ID = "hukytbnqolhx8d6t4ofj7mx0o8ezeu";
+
+	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+	private static ScheduledFuture<?> checkTokenRefreshTask;
 
 	@Override
 	public void onInitialize() {
@@ -174,6 +183,7 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 					"Please check the config file and fill in this information for the mod to work correctly.");
 		}*/
 
+
 		ServerLifecycleEvents.SERVER_STARTED.register((server -> {
 			serverRef = server;
 
@@ -193,6 +203,9 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 
 		ServerLifecycleEvents.SERVER_STOPPED.register((server -> {
 			serverRef = null;
+			if(checkTokenRefreshTask != null) {
+				checkTokenRefreshTask.cancel(true);
+			}
 			if(client != null) {
 				client.close();
 				client = null;
@@ -219,7 +232,6 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		}));
 
 		ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD.register((player, origin, destination) -> {
-			player.sendMessage(Text.literal("EVENT TRIGGERED"));
 			DynamicRegistryManager registryManager = destination.getRegistryManager();
 			if(Objects.equals(origin.getDimensionEntry(), registryManager.getOrThrow(RegistryKeys.DIMENSION_TYPE).getEntry(DimensionTypes.THE_NETHER.getValue()).get())) {
 				LootCrateAttachmentData data = player.getAttachedOrCreate(BlazinBlazeAttachmentTypes.LOOT_CRATE_ATTACHMENT_TYPE, () -> LootCrateAttachmentData.DEFAULT);
@@ -253,6 +265,10 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 	public static boolean updateCredential(OAuth2Credential newCredential) {
 		if(clientCredential != null) {
 			clientCredential.updateCredential(newCredential);
+			if(checkTokenRefreshTask != null) {
+				checkTokenRefreshTask.cancel(true);
+			}
+			checkTokenRefreshTask = scheduler.scheduleAtFixedRate(new CheckTokenRefresh(clientCredential), 0, 1, TimeUnit.HOURS);
 			return true;
 		}
 		return false;
@@ -387,5 +403,9 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		if(serverRef != null) {
 			sendSuccessMessage();
 		}
-	}
+        if (checkTokenRefreshTask != null) {
+            checkTokenRefreshTask.cancel(true);
+        }
+        checkTokenRefreshTask = scheduler.scheduleAtFixedRate(new CheckTokenRefresh(clientCredential), 0, 1, TimeUnit.HOURS);
+    }
 }

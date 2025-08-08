@@ -20,6 +20,7 @@ public class BlazinBlazeYAML {
     public static final String channelToken = "channelToken";
     public static final String refreshToken = "refreshToken";
     public static final String refreshTokenExpiry = "refreshTokenExpiry";
+    public static final String botYTName = "botYTName";
     public static final String clientConfigKey = "clientConfig";
 
     public static final String probabilityConfigKey = "probabilityConfig";
@@ -36,6 +37,7 @@ public class BlazinBlazeYAML {
         clientConfig.put(channelToken, "");
         clientConfig.put(refreshToken, "");
         clientConfig.put(refreshTokenExpiry, 0L);
+        clientConfig.put(botYTName, "");
 
         for (BlazinBlazeProbabilities probability : BlazinBlazeProbabilities.values()) {
             probabilityConfig.put(probability.getKey(), probability.getProbabilty());
@@ -73,7 +75,7 @@ public class BlazinBlazeYAML {
     }
 
     public void setClientInfo(String key, Object val) {
-        if(key.equals(channelToken) || key.equals(refreshToken)) {
+        if(key.equals(channelToken) || key.equals(refreshToken) || key.equals(botYTName)) {
             if(val instanceof String) {
                 clientConfig.put(key, val);
             }
