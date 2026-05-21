@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 0.7,
+  "group": "silicon",
+  "ingredient": "blaze-twitch-mod:deepslate_silicon_ore",
+  "result": {
+    "id": "blaze-twitch-mod:smelted_silicon"
+  }
+}

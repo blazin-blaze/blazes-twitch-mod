@@ -11,8 +11,16 @@
   "entity.blaze-twitch-mod.life_linked_fish": "§4§lLife-linked Fish",
 
   "block.blaze-twitch-mod.nuclear_tnt": "§a§lNuclear TNT",
+  "block.blaze-twitch-mod.mailbox": "Mailbox",
+  "block.blaze-twitch-mod.radio_block": "Radio",
+  "block.blaze-twitch-mod.silicon_ore": "Silicon Ore",
+  "block.blaze-twitch-mod.deepslate_silicon_ore": "Deepslate Silicon Ore",
 
   "item.blaze-twitch-mod.nuclear_tnt": "§a§lNuclear TNT",
+  "item.blaze-twitch-mod.mailbox": "Mailbox",
+  "item.blaze-twitch-mod.radio_block": "Radio",
+  "item.blaze-twitch-mod.silicon_ore": "Silicon Ore",
+  "item.blaze-twitch-mod.deepslate_silicon_ore": "Deepslate Silicon Ore",
   "item.blaze-twitch-mod.mail_item": "Mail Message",
   "item.blaze-twitch-mod.mail_item_sinister": "Sinister Mail Message",
   "item.blaze-twitch-mod.mail_item_epic": "Epic Mail Message",
@@ -24,6 +32,9 @@
   "item.blaze-twitch-mod.blaze_sword": "§c§l§oBlaze Sword",
   "item.blaze-twitch-mod.immunity_shield_item": "Event Immunity Shield",
   "item.blaze-twitch-mod.fake_eye_of_ender": "Eye of Ender",
+  "item.blaze-twitch-mod.silicon": "Raw Silicon",
+  "item.blaze-twitch-mod.smelted_silicon": "Smelted Silicon",
+  "item.blaze-twitch-mod.semiconductor": "Semiconductor",
 
   "item.blaze-twitch-mod.mail_author.info": "Author: %1$s",
   "item.blaze-twitch-mod.voice_author.info": "Speaker: %1$s",

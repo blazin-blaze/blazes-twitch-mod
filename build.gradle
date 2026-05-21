@@ -17,6 +17,7 @@ repositories {
 	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
 	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
 	// for more information about repositories.
+	maven { url "https://jitpack.io"  }
 	maven { url "https://maven.awakenedredstone.com"}
 }
 
@@ -64,6 +65,9 @@ dependencies {
 	include "io.github.resilience4j:resilience4j-cache:2.3.0"
 	include "io.github.resilience4j:resilience4j-retry:2.3.0"
 	include "io.github.resilience4j:resilience4j-feign:2.3.0"
+
+	implementation 'com.github.Chocohead:Fabric-ASM:v2.3'
+	include 'com.github.Chocohead:Fabric-ASM:v2.3'
 }
 
 processResources {
@@ -108,7 +112,7 @@ publishing {
 	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
 	repositories {
 		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
+		// Notice: This blocks does NOT have the same function as the blocks in the top level.
 		// The repositories here will be used for publishing your artifact, not for
 		// retrieving dependencies.
 	}

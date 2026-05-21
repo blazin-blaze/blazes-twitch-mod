@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "S": "blaze-twitch-mod:semiconductor",
+    "R": "minecraft:redstone",
+    "B": "minecraft:black_dye"
+  },
+  "pattern": [
+    "RII",
+    "ISI",
+    "IBI"
+  ],
+  "result": {
+    "count": 1,
+    "id": "blaze-twitch-mod:radio_block"
+  }
+}

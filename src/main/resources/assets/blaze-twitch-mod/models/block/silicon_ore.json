@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "blaze-twitch-mod:block/silicon_ore"
+  }
+}

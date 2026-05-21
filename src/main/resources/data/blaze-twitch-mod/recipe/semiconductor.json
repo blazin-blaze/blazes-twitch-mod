@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "S": "blaze-twitch-mod:smelted_silicon",
+    "R": "minecraft:redstone"
+  },
+  "pattern": [
+    "SSS",
+    "SRS",
+    "III"
+  ],
+  "result": {
+    "count": 1,
+    "id": "blaze-twitch-mod:semiconductor"
+  }
+}

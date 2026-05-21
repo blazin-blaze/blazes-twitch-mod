@@ -1,10 +1,13 @@
 package net.blazinblaze.blazetwitchmod.item;
 
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
+import net.blazinblaze.blazetwitchmod.block.BlazinBlazeTwitchModBlocks;
 import net.blazinblaze.blazetwitchmod.component.BlazinBlazeTwitchModComponents;
 import net.blazinblaze.blazetwitchmod.item.custom.*;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.item.Item;
 //import net.minecraft.item.SwordItem;
+import net.minecraft.item.ItemGroups;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -40,6 +43,9 @@ public class BlazinBlazeTwitchModItems {
     public static final Item VOICE_MESSAGE_ITEM = register("voice_message_item", VoiceMessageItem::new, new Item.Settings().maxCount(1).rarity(Rarity.RARE).component(BlazinBlazeTwitchModComponents.VOICE_MESSAGE, "test").component(BlazinBlazeTwitchModComponents.VOICE_AUTHOR, "test"));
     public static final Item IMMUNITY_SHIELD_ITEM = register("immunity_shield_item", ImmunityShieldItem::new, new Item.Settings().maxCount(1).rarity(Rarity.EPIC));
     public static final Item FAKE_EYE_OF_ENDER = register("fake_eye_of_ender", FakeEyeOfEnderItem::new, new Item.Settings().component(BlazinBlazeTwitchModComponents.FAKE_EYE_USER, "test"));
+    public static final Item RAW_SILICON = register("silicon", Item::new, new Item.Settings());
+    public static final Item SMELTED_SILICON = register("smelted_silicon", Item::new, new Item.Settings());
+    public static final Item SEMICONDUCTOR = register("semiconductor", Item::new, new Item.Settings().rarity(Rarity.RARE));
     //public static final Item BLAZE_SWORD = register("blaze_sword", settings -> new BlazeSword(BLAZIN_TOOL_MATERIAL, 3.5F, 4.0F, settings), new Item.Settings().useCooldown(0.5F).fireproof().maxCount(1).rarity(Rarity.EPIC));
 
     public static Item register(String name, Function<Item.Settings, Item> itemFactory, Item.Settings settings) {
@@ -56,5 +62,10 @@ public class BlazinBlazeTwitchModItems {
     }
 
     public static void initialize() {
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.INGREDIENTS).register(entries -> {
+            entries.add(BlazinBlazeTwitchModItems.RAW_SILICON);
+            entries.add(BlazinBlazeTwitchModItems.SMELTED_SILICON);
+            entries.add(BlazinBlazeTwitchModItems.SEMICONDUCTOR);
+        });
     }
 }

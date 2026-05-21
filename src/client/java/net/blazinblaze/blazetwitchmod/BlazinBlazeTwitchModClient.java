@@ -1,5 +1,6 @@
 package net.blazinblaze.blazetwitchmod;
 
+import com.chocohead.mm.api.ClassTinkerers;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.blazinblaze.blazetwitchmod.entity.model.BlazinBlazeModelLayers;
 import net.blazinblaze.blazetwitchmod.entity.renderer.*;
@@ -14,7 +15,10 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.gui.hud.InGameHud;
+import net.minecraft.client.gui.screen.ingame.HandledScreens;
+import net.minecraft.client.render.entity.equipment.EquipmentModel;
 import net.minecraft.client.toast.SystemToast;
+import net.minecraft.client.toast.TutorialToast;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -50,12 +54,29 @@ public class BlazinBlazeTwitchModClient implements ClientModInitializer {
 		HudElementRegistry.addFirst(Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "emote-hud"), BlazinBlazeEmoteHUD.getInstance());
 		HudElementRegistry.addFirst(Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "multiplier-hud"), BlazinBlazeMultiplierHUD.getInstance());
 
+		HandledScreens.register(BlazinBlazeTwitchMod.MAILBOX_SCREEN_HANDLER, BlazinBlazeMailboxScreen::new);
+		HandledScreens.register(BlazinBlazeTwitchMod.RADIO_SCREEN_HANDLER, BlazinBlazeRadioScreen::new);
+
 		ClientPlayNetworking.registerGlobalReceiver(FollowNotifyS2CPayload.ID, (payload, context) -> {
 			context.client().getToastManager().add(
-					SystemToast.create(context.client(), SystemToast.Type.PERIODIC_NOTIFICATION, Text.of("New Follower!"), Text.of(String.format(" %s just followed! Blazin!", payload.message())))
+					SystemToast.create(context.client(), SystemToast.Type.PERIODIC_NOTIFICATION, Text.of("New Follower!"), Text.of(String.format("%s just followed! Blazin!", payload.message())))
 			);
 
 			context.client().getNarratorManager().narrate(Text.of(String.format("[TTS]New Follower! %s just followed! Blazin!", payload.message())));
+			//context.client().getNarratorManager().narrate();
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(MailNotifyS2CPayload.ID, (payload, context) -> {
+			context.client().getToastManager().add(
+					new TutorialToast(context.client().textRenderer, ClassTinkerers.getEnum(TutorialToast.Type.class, "MAIL"), Text.of("You've got mail!"), Text.of(String.format("%s just sent you mail!", payload.message())), false, 8000)
+			);
+			//context.client().getNarratorManager().narrate();
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(VoiceMsgNotifyS2CPayload.ID, (payload, context) -> {
+			context.client().getToastManager().add(
+					new TutorialToast(context.client().textRenderer, ClassTinkerers.getEnum(TutorialToast.Type.class, "VOICE_MSG"), Text.of("New voice message!"), Text.of(String.format("%s just sent you a voice message!", payload.message())), false, 8000)
+			);
 			//context.client().getNarratorManager().narrate();
 		});
 

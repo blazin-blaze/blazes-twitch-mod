@@ -304,7 +304,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
 
             int numberOfItems = 0;
 
-            while(true) {
+            do {
 
                 Random random = new Random();
                 List<ItemStack> list = LOOT_TABLE.keySet().stream().toList();
@@ -313,23 +313,23 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
                 ItemRarity rarity = LOOT_TABLE.get(itemReference);
                 Double threshold = rarity.threshold();
 
-                if(ThreadLocalRandom.current().nextDouble() < threshold) {
+                if (ThreadLocalRandom.current().nextDouble() < threshold) {
                     boolean multiple = rarity.multiple();
                     boolean isEnchanted = rarity.isEnchantable();
                     String enchantableType = rarity.enchantableType();
 
-                    if(multiple) {
-                        if(ThreadLocalRandom.current().nextDouble() < (threshold * 1.2)) {
+                    if (multiple) {
+                        if (ThreadLocalRandom.current().nextDouble() < (threshold * 1.2)) {
                             item.setCount(random.nextInt(16));
                             this.dropStack(serverWorld, item);
                             numberOfItems++;
-                        }else {
+                        } else {
                             this.dropStack(serverWorld, item);
                             numberOfItems++;
                         }
-                    }else if(isEnchanted) {
-                        if(ThreadLocalRandom.current().nextDouble() < 1) {
-                            if(!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "armor")) {
+                    } else if (isEnchanted) {
+                        if (ThreadLocalRandom.current().nextDouble() < 1) {
+                            if (!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "armor")) {
 
                                 DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
                                 RegistryKey<Enchantment> rndmEnchantment = armorEnchantments.get(random.nextInt(armorEnchantments.size()));
@@ -341,7 +341,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
 
                                 this.dropStack(serverWorld, item);
                                 numberOfItems++;
-                            }else if(!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "tool")) {
+                            } else if (!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "tool")) {
 
                                 DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
                                 RegistryKey<Enchantment> rndmEnchantment = toolEnchantments.get(random.nextInt(toolEnchantments.size()));
@@ -353,7 +353,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
 
                                 this.dropStack(serverWorld, item);
                                 numberOfItems++;
-                            }else if(!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "bow")) {
+                            } else if (!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "bow")) {
 
                                 DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
                                 RegistryKey<Enchantment> rndmEnchantment = bowEnchantments.get(random.nextInt(bowEnchantments.size()));
@@ -365,7 +365,7 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
 
                                 this.dropStack(serverWorld, item);
                                 numberOfItems++;
-                            }else if(!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "crossbow")) {
+                            } else if (!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "crossbow")) {
 
                                 DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
                                 RegistryKey<Enchantment> rndmEnchantment = crossbowEnchantments.get(random.nextInt(crossbowEnchantments.size()));
@@ -378,31 +378,28 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
                                 this.dropStack(serverWorld, item);
                                 numberOfItems++;
                             }
-                        }else {
+                        } else {
                             this.dropStack(serverWorld, item);
                             numberOfItems++;
                         }
-                    }else {
+                    } else {
                         Item stackItem = item.getItem();
-                        if(stackItem == Items.POTION) {
+                        if (stackItem == Items.POTION) {
                             ItemStack potionItem = PotionContentsComponent.createStack(Items.POTION, possiblePotions.get(random.nextInt(possiblePotions.size())));
 
                             this.dropStack(serverWorld, potionItem);
                             numberOfItems++;
-                        }else if(stackItem == Items.ENCHANTED_BOOK) {
+                        } else if (stackItem == Items.ENCHANTED_BOOK) {
                             this.dropStack(serverWorld, item);
                             numberOfItems++;
-                        }else {
+                        } else {
                             this.dropStack(serverWorld, item);
                             numberOfItems++;
                         }
                     }
                 }
 
-                if(numberOfItems >= 3) {
-                    break;
-                }
-            }
+            } while (numberOfItems < 3);
 
             this.kill(serverWorld);
             return ActionResult.SUCCESS;

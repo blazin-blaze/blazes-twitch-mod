@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "blaze-twitch-mod:block/radio_block",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "blaze-twitch-mod:block/radio_block"
+    },
+    "facing=south": {
+      "model": "blaze-twitch-mod:block/radio_block",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "blaze-twitch-mod:block/radio_block",
+      "y": 270
+    }
+  }
+}

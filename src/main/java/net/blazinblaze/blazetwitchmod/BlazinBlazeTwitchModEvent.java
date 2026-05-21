@@ -7,10 +7,14 @@ import com.github.twitch4j.chat.events.channel.*;
 import com.github.twitch4j.events.ChannelGoOfflineEvent;
 import com.github.twitch4j.helix.domain.Stream;
 import io.github.iprodigy.bttv.common.Emote;
+import net.blazinblaze.blazetwitchmod.block.entity.MailboxBlockEntity;
+import net.blazinblaze.blazetwitchmod.block.entity.RadioBlockEntity;
 import net.blazinblaze.blazetwitchmod.component.BlazinBlazeTwitchModComponents;
 import net.blazinblaze.blazetwitchmod.config.BlazinBlazeYAML;
 import net.blazinblaze.blazetwitchmod.data.BlazinBlazeAttachmentTypes;
 import net.blazinblaze.blazetwitchmod.data.LootCrateAttachmentData;
+import net.blazinblaze.blazetwitchmod.data.MailboxAttachmentData;
+import net.blazinblaze.blazetwitchmod.data.RadioAttachmentData;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.blazinblaze.blazetwitchmod.entity.custom.*;
 import net.blazinblaze.blazetwitchmod.item.BlazinBlazeTwitchModItems;
@@ -25,6 +29,7 @@ import net.blazinblaze.blazetwitchmod.util.SoundMessageTimer;
 import net.blazinblaze.blazetwitchmod.util.TeleportTimer;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.entity.*;
@@ -50,6 +55,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.TypeFilter;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.dimension.DimensionTypes;
@@ -182,8 +188,6 @@ public class BlazinBlazeTwitchModEvent {
             "!close",
             "!dtimer",
             "!hold");
-
-    private String botName;
 
     public BlazinBlazeTwitchModEvent() {
         SPAWNABLE_MOBS.put("zombie", new SpawnableMob(EntityType.ZOMBIE, getProbabilityOrDefault(BlazinBlazeProbabilities.ZOMBIE_DEFAULT)));
@@ -486,19 +490,7 @@ public class BlazinBlazeTwitchModEvent {
     @EventSubscriber
     public void onChat(ChannelMessageEvent event) {
         String username = event.getUser().getName();
-        String message;
-        String bName = botName != null ? botName : getBotName();
-        if(bName != null) {
-            if(username.toLowerCase().matches(bName)) {
-                String[] arr = event.getMessage().split(" ", 2);
-                username = arr[0].substring(1);
-                message = event.getMessage().substring(String.format("[%s on YT]: ", username).length());
-            }else {
-                message = event.getMessage();
-            }
-        }else {
-            message = event.getMessage();
-        }
+        String message = event.getMessage();
 
         int multiplier = MultiplierTick.MultiplierTimer.getMultiplier();
         if(message.toLowerCase().startsWith("!spawn ")) {
@@ -1092,6 +1084,9 @@ public class BlazinBlazeTwitchModEvent {
                 if(server != null) {
                     for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
                         if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
+                            ServerWorld world = serverPlayer.getWorld();
+                            MailboxAttachmentData data = serverPlayer.getAttachedOrCreate(BlazinBlazeAttachmentTypes.MAILBOX_ATTACHMENT_TYPE, () -> MailboxAttachmentData.DEFAULT);
+
                             String messageText = message.substring("!message ".length());
                             String limitedText = messageText.substring(0, Math.min(messageText.length(), 500));
 
@@ -1126,27 +1121,49 @@ public class BlazinBlazeTwitchModEvent {
                             Random random = new Random();
                             String rndmFarewell = authorFarewells.get(random.nextInt(authorFarewells.size()));
 
-                            if(chosenType != null) {
-                                ItemStack stack = MAIL_TYPES.get(chosenType).copy();
-                                stack.set(BlazinBlazeTwitchModComponents.MAIL_MESSAGE, limitedText);
-                                stack.set(BlazinBlazeTwitchModComponents.MAIL_AUTHOR, username);
-                                stack.set(BlazinBlazeTwitchModComponents.MAIL_TYPE, chosenType);
-                                stack.set(BlazinBlazeTwitchModComponents.MAIL_FAREWELL, rndmFarewell);
-                                serverPlayer.giveItemStack(stack);
-                            }else {
-                                ItemStack stack = BlazinBlazeTwitchModItems.MAIL_ITEM.asItem().getDefaultStack().copy();
-                                stack.set(BlazinBlazeTwitchModComponents.MAIL_MESSAGE, limitedText);
-                                stack.set(BlazinBlazeTwitchModComponents.MAIL_AUTHOR, username);
-                                stack.set(BlazinBlazeTwitchModComponents.MAIL_TYPE, "default");
-                                stack.set(BlazinBlazeTwitchModComponents.MAIL_FAREWELL, rndmFarewell);
-                                serverPlayer.giveItemStack(stack);
-                            }
+                            ItemStack stack;
+                            stack = MAIL_TYPES.get(chosenType).copy();
+                            stack.set(BlazinBlazeTwitchModComponents.MAIL_MESSAGE, limitedText);
+                            stack.set(BlazinBlazeTwitchModComponents.MAIL_AUTHOR, username);
+                            stack.set(BlazinBlazeTwitchModComponents.MAIL_TYPE, chosenType);
+                            stack.set(BlazinBlazeTwitchModComponents.MAIL_FAREWELL, rndmFarewell);
 
-                            OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§7§lYOU'VE GOT MAIL!");
-                            ServerPlayNetworking.send(serverPlayer, payload);
-                            serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_NETHER_WOOD_DOOR_OPEN, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                            broadcast(String.format("§5§l[BTM]§r §7§l%s just sent you a message!", username), serverPlayer);
-                            shouldGiveImmunity(serverPlayer);
+                            server.execute(() -> {
+                                try {
+                                    BlockEntity assignedMailbox = world.getBlockEntity(data.blockPos());
+                                    if(assignedMailbox instanceof MailboxBlockEntity mailboxBlockEntity) {
+                                        DefaultedList<ItemStack> inventory = mailboxBlockEntity.getHeldStacks();
+
+                                        boolean inserted = false;
+
+                                        for(int i = 0; i < inventory.size(); i++)  {
+                                            ItemStack tempStack = inventory.get(i);
+                                            if(tempStack.isEmpty()) {
+                                                inventory.set(i, stack);
+                                                inserted = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if(inserted) {
+                                            mailboxBlockEntity.setHeldStacks(inventory);
+                                            //OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§7§lYOU'VE GOT MAIL!");
+                                            MailNotifyS2CPayload payload = new MailNotifyS2CPayload(username);
+                                            ServerPlayNetworking.send(serverPlayer, payload);
+                                            serverPlayer.playSoundToPlayer(SoundEvents.BLOCK_NETHER_WOOD_DOOR_OPEN, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                                            broadcast(String.format("§5§l[BTM]§r §7§l%s just sent you a message!", username), serverPlayer);
+                                            shouldGiveImmunity(serverPlayer);
+                                        }else {
+                                            serverPlayer.sendMessage(Text.literal("§5§l[BTM]§r §c§lYour mailbox is full!"));
+                                        }
+                                    }else {
+                                        serverPlayer.sendMessage(Text.literal("§5§l[BTM]§r §cYou don't have a mailbox to accept mail."));
+                                    }
+
+                                }catch(Exception e) {
+                                    BlazinBlazeTwitchMod.LOGGER.error("Failed to get assigned mailbox", e);
+                                }
+                            });
                         }else {
                             broadcastBlock(serverPlayer, username);
                         }
@@ -1161,27 +1178,61 @@ public class BlazinBlazeTwitchModEvent {
                 if(server != null) {
                     for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
                         if(!serverPlayer.hasStatusEffect(BlazinBlazeTwitchMod.IMMUNITY_SHIELD_EFFECT)) {
+                            ServerWorld world = serverPlayer.getWorld();
+                            RadioAttachmentData data = serverPlayer.getAttachedOrCreate(BlazinBlazeAttachmentTypes.RADIO_ATTACHMENT_TYPE, () -> RadioAttachmentData.DEFAULT);
                             String messageText = message.toLowerCase().substring("!voicemessage ".length()); //said sage cuz of MesSAGE... bruh
                             String limitedText = messageText.substring(0, Math.min(messageText.length(), 250));
 
                             ItemStack stack = BlazinBlazeTwitchModItems.VOICE_MESSAGE_ITEM.getDefaultStack().copy();
                             stack.set(BlazinBlazeTwitchModComponents.VOICE_MESSAGE, limitedText);
                             stack.set(BlazinBlazeTwitchModComponents.VOICE_AUTHOR, username);
-                            serverPlayer.giveItemStack(stack);
-                            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.AUTOMATIC_VOICE_MESSAGE_DEFAULT) * multiplier) {
-                                VoiceMessageS2CPayload payload = new VoiceMessageS2CPayload(limitedText, username);
-                                ServerPlayNetworking.send(serverPlayer, payload);
-                                serverPlayer.playSoundToPlayer(BlazinBlazeTwitchModSounds.VOICE_MESSAGE_EFFECT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                                serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                                broadcast(String.format("§5§l[BTM]§r §9§l%s just sent you an AUTOMATIC voice message!", username), serverPlayer);
-                                shouldGiveImmunity(serverPlayer);
-                            }else {
-                                OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§9§lYOU'VE GOT VOICEMAIL!");
-                                ServerPlayNetworking.send(serverPlayer, payload);
-                                serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                                broadcast(String.format("§5§l[BTM]§r §9§l%s just sent you a voice message!", username), serverPlayer);
-                                shouldGiveImmunity(serverPlayer);
-                            }
+
+                            server.execute(() -> {
+                                try {
+                                    BlockEntity assignedMailbox = world.getBlockEntity(data.blockPos());
+                                    if(assignedMailbox instanceof RadioBlockEntity radioBlockEntity) {
+                                        DefaultedList<ItemStack> inventory = radioBlockEntity.getHeldStacks();
+
+                                        boolean inserted = false;
+
+                                        for(int i = 0; i < inventory.size(); i++)  {
+                                            ItemStack tempStack = inventory.get(i);
+                                            if(tempStack.isEmpty()) {
+                                                inventory.set(i, stack);
+                                                inserted = true;
+                                                break;
+                                            }
+                                        }
+
+                                        if(inserted) {
+                                            radioBlockEntity.setHeldStacks(inventory);
+                                            if(ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.AUTOMATIC_VOICE_MESSAGE_DEFAULT) * multiplier) {
+                                                VoiceMessageS2CPayload payload = new VoiceMessageS2CPayload(limitedText, username);
+                                                VoiceMsgNotifyS2CPayload payload2 = new VoiceMsgNotifyS2CPayload(username);
+                                                ServerPlayNetworking.send(serverPlayer, payload);
+                                                ServerPlayNetworking.send(serverPlayer, payload2);
+                                                serverPlayer.playSoundToPlayer(BlazinBlazeTwitchModSounds.VOICE_MESSAGE_EFFECT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                                                serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                                                broadcast(String.format("§5§l[BTM]§r §9§l%s just sent you an AUTOMATIC voice message!", username), serverPlayer);
+                                                shouldGiveImmunity(serverPlayer);
+                                            }else {
+                                                //OverlayMessageS2CPayload payload = new OverlayMessageS2CPayload("§9§lYOU'VE GOT VOICEMAIL!");
+                                                VoiceMsgNotifyS2CPayload payload = new VoiceMsgNotifyS2CPayload(username);
+                                                ServerPlayNetworking.send(serverPlayer, payload);
+                                                serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_VILLAGER_AMBIENT, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+                                                broadcast(String.format("§5§l[BTM]§r §9§l%s just sent you a voice message!", username), serverPlayer);
+                                                shouldGiveImmunity(serverPlayer);
+                                            }
+                                        }else {
+                                            serverPlayer.sendMessage(Text.literal("§5§l[BTM]§r §c§lYour mailbox is full!"));
+                                        }
+                                    }else {
+                                        serverPlayer.sendMessage(Text.literal("§5§l[BTM]§r §cYou don't have a radio to accept voice messages."));
+                                    }
+                                }catch(Exception e) {
+                                    BlazinBlazeTwitchMod.LOGGER.error("Failed to get assigned radio", e);
+                                }
+                            });
                         }else {
                             broadcastBlock(serverPlayer, username);
                         }
@@ -1375,16 +1426,7 @@ public class BlazinBlazeTwitchModEvent {
                 if(server != null) {
                     for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
                         ServerWorld serverWorld = serverPlayer.getWorld();
-                        List<? extends ChatterEntity> entities;
-                        if(bName != null) {
-                            if(event.getUser().getName().toLowerCase().matches(bName)) {
-                                entities = getCurrentChattersForId(serverWorld, serverPlayer, String.format("%s on YT", username));;
-                            }else {
-                                entities = getCurrentChattersForId(serverWorld, serverPlayer, event.getUser().getId());
-                            }
-                        }else {
-                            entities = getCurrentChattersForId(serverWorld, serverPlayer, event.getUser().getId());
-                        }
+                        List<? extends ChatterEntity> entities = getCurrentChattersForId(serverWorld, serverPlayer, event.getUser().getId());
 
                         if(lowerItem.matches("player_head_item")) {
                             ItemStack playerHead = Items.PLAYER_HEAD.getDefaultStack().copy();
@@ -1507,30 +1549,13 @@ public class BlazinBlazeTwitchModEvent {
                 ServerWorld world = serverPlayer.getWorld();
                 BlockPos spawnLocation = serverPlayer.getBlockPos();
 
-                List<? extends ChatterEntity> entities;
-                if(bName != null) {
-                    if(event.getUser().getName().toLowerCase().matches(bName)) {
-                        entities = getCurrentChattersForId(world, serverPlayer, String.format("%s on YT", username));;
-                    }else {
-                        entities = getCurrentChattersForId(world, serverPlayer, event.getUser().getId());
-                    }
-                }else {
-                    entities = getCurrentChattersForId(world, serverPlayer, event.getUser().getId());
-                }
+                List<? extends ChatterEntity> entities = getCurrentChattersForId(world, serverPlayer, event.getUser().getId());
 
                 if (entities.isEmpty()) {
                     if (ThreadLocalRandom.current().nextDouble() < getProbabilityOrDefault(BlazinBlazeProbabilities.CHATTER_SPAWN) * multiplier) {
                         if (chatterBucket.tryConsume(1L)) {
                             ChatterEntity chatter = BlazinBlazeTwitchModEntities.CHATTER_ENTITY.spawn(world, spawnLocation, SpawnReason.MOB_SUMMONED);
-                            if(bName != null) {
-                                if(event.getUser().getName().toLowerCase().matches(bName)) {
-                                    chatter.setUserId(String.format("%s on YT", username));
-                                }else {
-                                    chatter.setUserId(event.getUser().getId());
-                                }
-                            }else {
-                                chatter.setUserId(event.getUser().getId());
-                            }
+                            chatter.setUserId(event.getUser().getId());
 
                             chatter.setTamed(true, true);
                             chatter.setOwner(serverPlayer);
@@ -1559,19 +1584,6 @@ public class BlazinBlazeTwitchModEvent {
                 }
             }
         }
-    }
-
-    private String getBotName() {
-        if(BlazinBlazeTwitchMod.config != null) {
-            Object bName = BlazinBlazeTwitchMod.config.getClientInfo(BlazinBlazeYAML.botYTName);
-            if(bName instanceof String) {
-                if(!((String) bName).isEmpty()) {
-                    botName = ((String) bName).toLowerCase();
-                    return ((String) bName).toLowerCase();
-                }
-            }
-        }
-        return null;
     }
 
     private List<? extends ChatterEntity> getCurrentChattersForId(ServerWorld serverWorld, ServerPlayerEntity serverPlayer, String id) {

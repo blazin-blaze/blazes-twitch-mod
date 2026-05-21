@@ -20,7 +20,6 @@ public class BlazinBlazeYAML {
     public static final String channelToken = "channelToken";
     public static final String refreshToken = "refreshToken";
     public static final String refreshTokenExpiry = "refreshTokenExpiry";
-    public static final String botYTName = "botYTName";
     public static final String clientConfigKey = "clientConfig";
 
     public static final String probabilityConfigKey = "probabilityConfig";
@@ -37,14 +36,10 @@ public class BlazinBlazeYAML {
         clientConfig.put(channelToken, "");
         clientConfig.put(refreshToken, "");
         clientConfig.put(refreshTokenExpiry, 0L);
-        clientConfig.put(botYTName, "");
 
         for (BlazinBlazeProbabilities probability : BlazinBlazeProbabilities.values()) {
             probabilityConfig.put(probability.getKey(), probability.getProbabilty());
         }
-
-        config.put(clientConfigKey, clientConfig);
-        config.put(probabilityConfigKey, probabilityConfig);
 
         save();
     }
@@ -75,7 +70,7 @@ public class BlazinBlazeYAML {
     }
 
     public void setClientInfo(String key, Object val) {
-        if(key.equals(channelToken) || key.equals(refreshToken) || key.equals(botYTName)) {
+        if(key.equals(channelToken) || key.equals(refreshToken)) {
             if(val instanceof String) {
                 clientConfig.put(key, val);
             }
@@ -111,7 +106,7 @@ public class BlazinBlazeYAML {
 
     public BlazinBlazeYAML(File file) {
         this.file = file;
-        yamlOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK); // For block style YAML
+        yamlOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK); // For blocks style YAML
         yamlOptions.setPrettyFlow(true);
         yamlOptions.setProcessComments(true);
         yaml = new Yaml(yamlOptions);

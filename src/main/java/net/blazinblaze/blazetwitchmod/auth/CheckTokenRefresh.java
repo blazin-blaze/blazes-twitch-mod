@@ -33,15 +33,11 @@ public class CheckTokenRefresh implements Runnable {
                             return Text.of("§5§l[BTM]§r §cToken expiry check failed. The server owner/host must re-authenticate to avoid future errors.");
                         }
                     }
-                    return Text.of("§5§l[BTM]§r §cToken expiry check failed. The you must re-authenticate to avoid future errors.");
+                    return Text.of("§5§l[BTM]§r §cToken expiry check failed. You must re-authenticate to avoid future errors.");
                 }, false);
             }
             BlazinBlazeTwitchMod.closeTwitchClient();
             BlazinBlazeTwitchMod.createNewToken();
-        }else {
-            if(server != null) {
-                server.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r §aToken refresh succeeded!"), false);
-            }
         }
     }
 

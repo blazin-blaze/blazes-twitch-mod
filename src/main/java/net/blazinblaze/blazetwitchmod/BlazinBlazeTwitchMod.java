@@ -18,6 +18,7 @@ import joptsimple.internal.Strings;
 import net.blazinblaze.blazetwitchmod.auth.BlazinBlazeAuth;
 import net.blazinblaze.blazetwitchmod.auth.CheckTokenRefresh;
 import net.blazinblaze.blazetwitchmod.block.BlazinBlazeTwitchModBlocks;
+import net.blazinblaze.blazetwitchmod.block.entity.BlazinBlazeTwitchModBlockEntities;
 import net.blazinblaze.blazetwitchmod.config.BlazinBlazeYAML;
 import net.blazinblaze.blazetwitchmod.data.BlazinBlazeAttachmentTypes;
 import net.blazinblaze.blazetwitchmod.data.LootCrateAttachmentData;
@@ -29,6 +30,8 @@ import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.blazinblaze.blazetwitchmod.entity.custom.MegaCreeperEntity;
 import net.blazinblaze.blazetwitchmod.item.BlazinBlazeTwitchModItems;
 import net.blazinblaze.blazetwitchmod.networking.*;
+import net.blazinblaze.blazetwitchmod.screen.MailboxScreenHandler;
+import net.blazinblaze.blazetwitchmod.screen.RadioScreenHandler;
 import net.blazinblaze.blazetwitchmod.sound.BlazinBlazeTwitchModSounds;
 import net.blazinblaze.blazetwitchmod.util.MultiplierTick;
 import net.blazinblaze.blazetwitchmod.util.SoundMessageTimer;
@@ -50,6 +53,8 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.resource.featuretoggle.FeatureSet;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -102,6 +107,9 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 	private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 	private static ScheduledFuture<?> checkTokenRefreshTask;
 
+	public static final ScreenHandlerType<MailboxScreenHandler> MAILBOX_SCREEN_HANDLER = Registry.register(Registries.SCREEN_HANDLER, Identifier.of(MOD_ID, "mailbox_screen_handler"), new ScreenHandlerType<>(MailboxScreenHandler::new, FeatureSet.empty()));
+	public static final ScreenHandlerType<RadioScreenHandler> RADIO_SCREEN_HANDLER = Registry.register(Registries.SCREEN_HANDLER, Identifier.of(MOD_ID, "radio_screen_handler"), new ScreenHandlerType<>(RadioScreenHandler::new, FeatureSet.empty()));
+
 	@Override
 	public void onInitialize() {
 
@@ -115,6 +123,8 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		BlazinBlazeTwitchModSounds.initialize();
 		BlazinBlazeAttachmentTypes.init();
 
+		BlazinBlazeTwitchModBlockEntities.initialize();
+
 		MultiplierTick.register();
 		SoundMessageTimer.register();
 		TeleportTimer.register();
@@ -127,6 +137,8 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 		PayloadTypeRegistry.playS2C().register(EmoteScreenS2CPayload.ID, EmoteScreenS2CPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(FullscreenS2CPayload.ID, FullscreenS2CPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(CloseS2CPayload.ID, CloseS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(MailNotifyS2CPayload.ID, MailNotifyS2CPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(VoiceMsgNotifyS2CPayload.ID, VoiceMsgNotifyS2CPayload.CODEC);
 
 		//File configFile = new File(FabricLoader.getInstance().getConfigDir().resolve("btm-config.json").toString());
 		//BlazinBlazeConfig config = BlazinBlazeConfig.loadConfigFile(configFile);
@@ -269,6 +281,9 @@ public class BlazinBlazeTwitchMod implements ModInitializer {
 				checkTokenRefreshTask.cancel(true);
 			}
 			checkTokenRefreshTask = scheduler.scheduleAtFixedRate(new CheckTokenRefresh(clientCredential), 0, 1, TimeUnit.HOURS);
+			if(serverRef != null) {
+				serverRef.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r §aToken refresh succeeded!"), false);
+			}
 			return true;
 		}
 		return false;

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "bonus_rolls": 0.0,
+      "conditions": [
+        {
+          "condition": "minecraft:survives_explosion"
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "blaze-twitch-mod:radio_block"
+        }
+      ],
+      "rolls": 1.0
+    }
+  ],
+  "random_sequence": "blaze-twitch-mod:blocks/radio_block"
+}
