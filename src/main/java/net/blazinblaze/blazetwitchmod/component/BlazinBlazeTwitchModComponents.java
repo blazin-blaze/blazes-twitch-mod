@@ -2,57 +2,55 @@ package net.blazinblaze.blazetwitchmod.component;
 
 import com.mojang.serialization.Codec;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
-import net.minecraft.component.ComponentType;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.Identifier;
 
 public class BlazinBlazeTwitchModComponents {
     protected static void initialize() {
         BlazinBlazeTwitchMod.LOGGER.info("Registering {} components", BlazinBlazeTwitchMod.MOD_ID);
-        // Technically this method can stay empty, but some developers like to notify
-        // the console, that certain parts of the mod have been successfully initialized
     }
 
-    public static final ComponentType<String> MAIL_MESSAGE = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "mail_message"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
+    public static final DataComponentType<String> MAIL_MESSAGE = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "mail_message"),
+            DataComponentType.<String>builder().persistent(Codec.STRING).build()
     );
 
-    public static final ComponentType<String> MAIL_AUTHOR = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "mail_author"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
+    public static final DataComponentType<String> MAIL_AUTHOR = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "mail_author"),
+            DataComponentType.<String>builder().persistent(Codec.STRING).build()
     );
 
-    public static final ComponentType<String> MAIL_TYPE = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "mail_type"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
+    public static final DataComponentType<String> MAIL_TYPE = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "mail_type"),
+            DataComponentType.<String>builder().persistent(Codec.STRING).build()
     );
 
-    public static final ComponentType<String> MAIL_FAREWELL = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "mail_farewell"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
+    public static final DataComponentType<String> MAIL_FAREWELL = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "mail_farewell"),
+            DataComponentType.<String>builder().persistent(Codec.STRING).build()
     );
 
-    public static final ComponentType<String> VOICE_MESSAGE = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "voice_message"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
+    public static final DataComponentType<String> VOICE_MESSAGE = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "voice_message"),
+            DataComponentType.<String>builder().persistent(Codec.STRING).build()
     );
 
-    public static final ComponentType<String> VOICE_AUTHOR = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "voice_author"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
+    public static final DataComponentType<String> VOICE_AUTHOR = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "voice_author"),
+            DataComponentType.<String>builder().persistent(Codec.STRING).build()
     );
 
-    public static final ComponentType<String> FAKE_EYE_USER = Registry.register(
-            Registries.DATA_COMPONENT_TYPE,
-            Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "fake_eye_user"),
-            ComponentType.<String>builder().codec(Codec.STRING).build()
+    public static final DataComponentType<String> FAKE_EYE_USER = Registry.register(
+            BuiltInRegistries.DATA_COMPONENT_TYPE,
+            Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "fake_eye_user"),
+            DataComponentType.<String>builder().persistent(Codec.STRING).build()
     );
 }

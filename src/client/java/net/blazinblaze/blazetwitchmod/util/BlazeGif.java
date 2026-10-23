@@ -3,8 +3,8 @@ package net.blazinblaze.blazetwitchmod.util;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.blazinblaze.blazetwitchmod.config.GifDelaysFile;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import javax.imageio.stream.ImageInputStream;
@@ -20,7 +20,7 @@ public class BlazeGif extends BlazeImage {
     private final MutableInt frame = new MutableInt();
     private final MutableInt delayProgress = new MutableInt();
 
-    public BlazeGif(NativeImageBackedTexture texture, String id, File[] images) {
+    public BlazeGif(DynamicTexture texture, String id, File[] images) {
         super(texture, id);
         this.images = images;
     }
@@ -37,10 +37,10 @@ public class BlazeGif extends BlazeImage {
                     File file = images[(frame.getAndIncrement() % images.length)];
 
                     try (InputStream fileInputStream = new FileInputStream(file)){
-                        NativeImageBackedTexture texture = this.getTexture();
+                        DynamicTexture texture = this.getTexture();
                         delayProgress.setValue(0);
                         NativeImage image = NativeImage.read(fileInputStream);
-                        texture.setImage(image);
+                        texture.setPixels(image);
                         texture.upload();
                     } catch (IOException e) {
                         BlazinBlazeTwitchMod.LOGGER.error("Error while trying to switch to new GIF frame", e);

@@ -4,8 +4,11 @@ import net.blazinblaze.blazetwitchmod.entity.animation.BeddyAnimations;
 import net.blazinblaze.blazetwitchmod.entity.animation.LootCrateAnimations;
 import net.blazinblaze.blazetwitchmod.entity.state.BeddyRenderState;
 import net.minecraft.client.model.*;
-import net.minecraft.client.render.entity.animation.Animation;
-import net.minecraft.client.render.entity.model.EntityModel;
+import net.minecraft.client.animation.KeyframeAnimation;
+import net.minecraft.client.model.EntityModel;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.client.model.geom.builders.*;
 
 public class BeddyEntityModel extends EntityModel<BeddyRenderState> {
     private final ModelPart bone3;
@@ -13,8 +16,8 @@ public class BeddyEntityModel extends EntityModel<BeddyRenderState> {
     private final ModelPart bone2;
     private final ModelPart bone4;
 
-    private final Animation idlingAnimation;
-    private final Animation walkingAnimation;
+    private final KeyframeAnimation idlingAnimation;
+    private final KeyframeAnimation walkingAnimation;
 
     public BeddyEntityModel(ModelPart root) {
         super(root);
@@ -22,33 +25,33 @@ public class BeddyEntityModel extends EntityModel<BeddyRenderState> {
         this.bone = root.getChild("bone");
         this.bone2 = root.getChild("bone2");
         this.bone4 = root.getChild("bone4");
-        this.idlingAnimation = BeddyAnimations.BEDDY_IDLE.createAnimation(root);
-        this.walkingAnimation = BeddyAnimations.BEDDY_WALKING.createAnimation(root);
+        this.idlingAnimation = BeddyAnimations.BEDDY_IDLE.bake(root);
+        this.walkingAnimation = BeddyAnimations.BEDDY_WALKING.bake(root);
     }
 
-    public static TexturedModelData getTexturedModelData() {
-        ModelData modelData = new ModelData();
-        ModelPartData modelPartData = modelData.getRoot();
-        ModelPartData bone3 = modelPartData.addChild("bone3", ModelPartBuilder.create().uv(0, 0).cuboid(-8.0F, -16.0F, -8.0F, 16.0F, 16.0F, 16.0F, new Dilation(0.0F)), ModelTransform.origin(0.0F, 20.0F, 0.0F));
+    public static LayerDefinition getTexturedModelData() {
+        MeshDefinition modelData = new MeshDefinition();
+        PartDefinition modelPartData = modelData.getRoot();
+        PartDefinition bone3 = modelPartData.addOrReplaceChild("bone3", CubeListBuilder.create().texOffs(0, 0).addBox(-8.0F, -16.0F, -8.0F, 16.0F, 16.0F, 16.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 20.0F, 0.0F));
 
-        ModelPartData bone = modelPartData.addChild("bone", ModelPartBuilder.create().uv(20, 37).cuboid(-5.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new Dilation(0.0F))
-                .uv(20, 32).cuboid(-5.0F, 2.0F, -4.0F, 2.0F, 2.0F, 3.0F, new Dilation(0.0F)), ModelTransform.origin(1.0F, 20.0F, 0.0F));
+        PartDefinition bone = modelPartData.addOrReplaceChild("bone", CubeListBuilder.create().texOffs(20, 37).addBox(-5.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F))
+                .texOffs(20, 32).addBox(-5.0F, 2.0F, -4.0F, 2.0F, 2.0F, 3.0F, new CubeDeformation(0.0F)), PartPose.offset(1.0F, 20.0F, 0.0F));
 
-        ModelPartData bone2 = modelPartData.addChild("bone2", ModelPartBuilder.create().uv(28, 37).cuboid(-5.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new Dilation(0.0F))
-                .uv(30, 32).cuboid(-5.0F, 2.0F, -4.0F, 2.0F, 2.0F, 3.0F, new Dilation(0.0F)), ModelTransform.origin(8.0F, 20.0F, 0.0F));
+        PartDefinition bone2 = modelPartData.addOrReplaceChild("bone2", CubeListBuilder.create().texOffs(28, 37).addBox(-5.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F))
+                .texOffs(30, 32).addBox(-5.0F, 2.0F, -4.0F, 2.0F, 2.0F, 3.0F, new CubeDeformation(0.0F)), PartPose.offset(8.0F, 20.0F, 0.0F));
 
-        ModelPartData bone4 = modelPartData.addChild("bone4", ModelPartBuilder.create().uv(0, 32).cuboid(7.0F, -7.0F, -1.0F, 4.0F, 7.0F, 1.0F, new Dilation(0.0F))
-                .uv(10, 32).cuboid(-1.0F, -7.0F, -1.0F, 4.0F, 7.0F, 1.0F, new Dilation(0.0F)), ModelTransform.origin(-5.0F, 8.0F, -8.0F));
-        return TexturedModelData.of(modelData, 64, 64);
+        PartDefinition bone4 = modelPartData.addOrReplaceChild("bone4", CubeListBuilder.create().texOffs(0, 32).addBox(7.0F, -7.0F, -1.0F, 4.0F, 7.0F, 1.0F, new CubeDeformation(0.0F))
+                .texOffs(10, 32).addBox(-1.0F, -7.0F, -1.0F, 4.0F, 7.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(-5.0F, 8.0F, -8.0F));
+        return LayerDefinition.create(modelData, 64, 64);
     }
 
     @Override
-    public void setAngles(BeddyRenderState state) {
-        super.setAngles(state);
-        this.getRootPart().traverse().forEach(ModelPart::resetTransform);
+    public void setupAnim(BeddyRenderState state) {
+        super.setupAnim(state);
+        this.root().getAllParts().forEach(ModelPart::resetPose);
 
-        this.walkingAnimation.applyWalking(state.limbSwingAnimationProgress, state.limbSwingAmplitude, 2f, 2.5f);
-        this.idlingAnimation.apply(state.idleAnimationState, state.age, 1f);
+        this.walkingAnimation.applyWalk(state.walkAnimationPos, state.walkAnimationSpeed, 2f, 2.5f);
+        this.idlingAnimation.apply(state.idleAnimationState, state.ageInTicks, 1f);
     }
 
 }

@@ -5,15 +5,15 @@ import net.blazinblaze.blazetwitchmod.util.BlazeGif;
 import net.blazinblaze.blazetwitchmod.util.BlazeImage;
 import net.blazinblaze.blazetwitchmod.util.CloseEmoteTimer;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.resources.Identifier;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -52,8 +52,8 @@ public class BlazinBlazeEmoteHUD implements HudElement {
     }
 
     public void setEmoteLocation(String id) {
-        maxWidth = MinecraftClient.getInstance().getWindow().getScaledWidth();
-        maxHeight = MinecraftClient.getInstance().getWindow().getScaledHeight();
+        maxWidth = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        maxHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
         if(maxWidth < 0) {
             maxWidth = 0;
         }
@@ -79,9 +79,9 @@ public class BlazinBlazeEmoteHUD implements HudElement {
         });
         CloseEmoteTimer.INSTANCE.setCloseTimer(100L, id, image);
         setEmoteLocation(id);
-        ClientPlayerEntity player = MinecraftClient.getInstance().player;
+        LocalPlayer player = Minecraft.getInstance().player;
         if(player != null) {
-            player.playSoundToPlayer(SoundEvents.ENTITY_ITEM_FRAME_ADD_ITEM, SoundCategory.NEUTRAL, 1.0F, 1.0F);
+            player.playSound(SoundEvents.ITEM_FRAME_ADD_ITEM, 1.0F, 1.0F);
         }
     }
 
@@ -100,15 +100,15 @@ public class BlazinBlazeEmoteHUD implements HudElement {
     }
 
     @Override
-    public void render(DrawContext context, RenderTickCounter tickCounter) {
-        maxWidth = context.getScaledWindowWidth();
-        maxHeight = context.getScaledWindowHeight();
+    public void extractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
+        maxWidth = graphics.guiWidth();
+        maxHeight = graphics.guiHeight();
         currentEmotes.forEach((key, value) -> {
             EmoteLocation location = emoteLocations.get(key);
             //if(location == null) {
-                //setEmoteLocation(key);
-                //location = emoteLocations.get(key);
-           // }
+            //setEmoteLocation(key);
+            //location = emoteLocations.get(key);
+            // }
             if(value instanceof BlazeGif gif) {
                 try {
                     gif.tick();
@@ -116,11 +116,11 @@ public class BlazinBlazeEmoteHUD implements HudElement {
                     BlazinBlazeTwitchMod.LOGGER.error("Error while trying to get new GIF frame", e);
                 }
             }
-            int width = value.getTexture().getImage().getWidth();
-            int height = value.getTexture().getImage().getHeight();
+            int width = value.getTexture().getPixels().getWidth();
+            int height = value.getTexture().getPixels().getHeight();
             int x = location.x;
             int y = location.y;
-            context.drawTexture(RenderPipelines.GUI_TEXTURED, Identifier.of(BlazinBlazeTwitchMod.MOD_ID, key), x, y, 0, 0, width, height, width, height);
+            graphics.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, key), x, y, 0, 0, width, height, width, height);
         });
     }
 

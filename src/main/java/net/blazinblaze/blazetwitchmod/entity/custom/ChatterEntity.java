@@ -1,286 +1,285 @@
 package net.blazinblaze.blazetwitchmod.entity.custom;
 
 import com.google.common.collect.ImmutableList;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.EnchantmentEffectComponentTypes;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.*;
-import net.minecraft.entity.ai.brain.MemoryModuleState;
-import net.minecraft.entity.ai.brain.MemoryModuleType;
-import net.minecraft.entity.ai.brain.sensor.Sensor;
-import net.minecraft.entity.ai.brain.sensor.SensorType;
-import net.minecraft.entity.ai.brain.task.TargetUtil;
-import net.minecraft.entity.ai.control.FlightMoveControl;
-import net.minecraft.entity.ai.goal.*;
-import net.minecraft.entity.ai.pathing.BirdNavigation;
-import net.minecraft.entity.ai.pathing.EntityNavigation;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.data.TrackedData;
-import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.entity.mob.ZombieEntity;
-import net.minecraft.entity.mob.ZombifiedPiglinEntity;
-import net.minecraft.entity.passive.*;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.item.ItemStack;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.server.network.DebugInfoSender;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3i;
-import net.minecraft.util.profiler.Profiler;
-import net.minecraft.util.profiler.Profilers;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.World;
-import net.minecraft.world.event.GameEvent;
-import net.minecraft.world.event.Vibrations;
-import net.minecraft.world.event.listener.EntityGameEventHandler;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.goal.FollowOwnerGoal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.sensing.Sensor;
+import net.minecraft.world.entity.ai.sensing.SensorType;
+import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
+import net.minecraft.world.entity.ai.control.FlyingMoveControl;
+import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.level.ItemLike;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.Vec3i;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.gameevent.vibrations.VibrationSystem;
+import net.minecraft.world.level.gameevent.DynamicGameEventListener;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 
-public class ChatterEntity extends TameableEntity {
+public class ChatterEntity extends TamableAnimal {
     private static final Vec3i ITEM_PICKUP_RANGE_EXPANDER = new Vec3i(1, 1, 1);
-    private final SimpleInventory inventory = new SimpleInventory(1);
+    private final SimpleContainer inventory = new SimpleContainer(1);
     private float itemHoldAnimationTicks;
     private float lastItemHoldAnimationTicks;
     private float spinningAnimationTicks;
     private float lastSpinningAnimationTicks;
-    private static final TrackedData<String> USERID = DataTracker.registerData(ChatterEntity.class, TrackedDataHandlerRegistry.STRING);
-    private static final TrackedData<String> USERNAME = DataTracker.registerData(ChatterEntity.class, TrackedDataHandlerRegistry.STRING);
-    private static final TrackedData<Integer> CHAT_COUNT = DataTracker.registerData(ChatterEntity.class, TrackedDataHandlerRegistry.INTEGER);
+    private static final EntityDataAccessor<String> USERID = SynchedEntityData.defineId(ChatterEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> USERNAME = SynchedEntityData.defineId(ChatterEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Integer> CHAT_COUNT = SynchedEntityData.defineId(ChatterEntity.class, EntityDataSerializers.INT);
 
-    public ChatterEntity(EntityType<? extends ChatterEntity> entityType, World world) {
+    public ChatterEntity(EntityType<? extends ChatterEntity> entityType, Level world) {
         super(entityType, world);
-        this.moveControl = new FlightMoveControl(this, 20, true);
+        this.moveControl = new FlyingMoveControl(this, 20, true);
         this.setCanPickUpLoot(this.canPickUpLoot());
     }
 
-    protected void initGoals() {
-        this.goalSelector.add(0, new FollowOwnerGoal(this, 1.0F, 5.0F, 1.0F));
-        this.goalSelector.add(2, new LookAtEntityGoal(this, PlayerEntity.class, 8.0F));
-        this.goalSelector.add(3, new WanderAroundFarGoal(this, (double)1.0F));
-        this.goalSelector.add(4, new LookAroundGoal(this));
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new FollowOwnerGoal(this, 1.0F, 5.0F, 1.0F));
+        this.goalSelector.addGoal(2, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, (double)1.0F));
+        this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
     }
 
-    public static DefaultAttributeContainer.Builder createAllayAttributes() {
-        return MobEntity.createMobAttributes().add(EntityAttributes.MAX_HEALTH, (double)20.0F).add(EntityAttributes.FLYING_SPEED, (double)0.1F).add(EntityAttributes.MOVEMENT_SPEED, (double)0.1F).add(EntityAttributes.ATTACK_DAMAGE, (double)2.0F);
+    public static AttributeSupplier.Builder createAllayAttributes() {
+        return Mob.createMobAttributes().add(Attributes.MAX_HEALTH, (double)20.0F).add(Attributes.FLYING_SPEED, (double)0.1F).add(Attributes.MOVEMENT_SPEED, (double)0.1F).add(Attributes.ATTACK_DAMAGE, (double)2.0F);
     }
 
-    protected EntityNavigation createNavigation(World world) {
-        BirdNavigation birdNavigation = new BirdNavigation(this, world);
+    protected PathNavigation createNavigation(Level world) {
+        FlyingPathNavigation birdNavigation = new FlyingPathNavigation(this, world);
         birdNavigation.setCanOpenDoors(false);
-        birdNavigation.setCanSwim(true);
-        birdNavigation.setMaxFollowRange(48.0F);
+        birdNavigation.setCanFloat(true);
+        birdNavigation.setRequiredPathLength(48.0F);
         return birdNavigation;
     }
 
-    public void travel(Vec3d movementInput) {
-        this.travelFlying(movementInput, this.getMovementSpeed());
+    public void travel(Vec3 movementInput) {
+        this.travelFlying(movementInput, this.getSpeed());
     }
 
     protected void playStepSound(BlockPos pos, BlockState state) {
     }
 
-    protected void fall(double heightDifference, boolean onGround, BlockState state, BlockPos landedPosition) {
+    protected void checkFallDamage(double heightDifference, boolean onGround, BlockState state, BlockPos landedPosition) {
     }
 
     protected SoundEvent getAmbientSound() {
-        return this.hasStackEquipped(EquipmentSlot.MAINHAND) ? SoundEvents.ENTITY_ALLAY_AMBIENT_WITH_ITEM : SoundEvents.ENTITY_ALLAY_AMBIENT_WITHOUT_ITEM;
+        return this.hasItemInSlot(EquipmentSlot.MAINHAND) ? SoundEvents.ALLAY_AMBIENT_WITH_ITEM : SoundEvents.ALLAY_AMBIENT_WITHOUT_ITEM;
     }
 
     protected SoundEvent getHurtSound(DamageSource source) {
-        return SoundEvents.ENTITY_ALLAY_HURT;
+        return SoundEvents.ALLAY_HURT;
     }
 
     protected SoundEvent getDeathSound() {
-        return SoundEvents.ENTITY_ALLAY_DEATH;
+        return SoundEvents.ALLAY_DEATH;
     }
 
     protected float getSoundVolume() {
         return 0.4F;
     }
 
-    public void tickMovement() {
-        super.tickMovement();
-        if (!this.getWorld().isClient && this.isAlive() && this.age % 10 == 0) {
+    public void aiStep() {
+        super.aiStep();
+        if (!this.level().isClientSide() && this.isAlive() && this.tickCount % 10 == 0) {
             this.heal(1.0F);
         }
     }
 
     public void tick() {
         super.tick();
-        if (this.getWorld().isClient) {
+        if (this.level().isClientSide()) {
             this.lastItemHoldAnimationTicks = this.itemHoldAnimationTicks;
             if (this.isHoldingItem()) {
-                this.itemHoldAnimationTicks = MathHelper.clamp(this.itemHoldAnimationTicks + 1.0F, 0.0F, 5.0F);
+                this.itemHoldAnimationTicks = Mth.clamp(this.itemHoldAnimationTicks + 1.0F, 0.0F, 5.0F);
             } else {
-                this.itemHoldAnimationTicks = MathHelper.clamp(this.itemHoldAnimationTicks - 1.0F, 0.0F, 5.0F);
+                this.itemHoldAnimationTicks = Mth.clamp(this.itemHoldAnimationTicks - 1.0F, 0.0F, 5.0F);
             }
         }
         if(getChatCount() > 0) {
             setChatCount(getChatCount() - 1);
         }else {
-            this.setCustomName(Text.literal(String.format("§l%s", getUsername())));
+            this.setCustomName(Component.literal(String.format("§l%s", getUsername())));
         }
     }
 
     public boolean isHoldingItem() {
-        return !this.getStackInHand(Hand.MAIN_HAND).isEmpty();
+        return !this.getItemInHand(InteractionHand.MAIN_HAND).isEmpty();
     }
 
-    protected boolean canDispenserEquipSlot(EquipmentSlot slot) {
+    protected boolean canDispenserEquipIntoSlot(EquipmentSlot slot) {
         return false;
     }
 
-    public ActionResult interactMob(PlayerEntity player, Hand hand) {
-        ItemStack itemStack = player.getStackInHand(hand);
-        ItemStack itemStack2 = this.getStackInHand(Hand.MAIN_HAND);
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack itemStack = player.getItemInHand(hand);
+        ItemStack itemStack2 = this.getItemInHand(InteractionHand.MAIN_HAND);
         if (itemStack2.isEmpty() && !itemStack.isEmpty()) {
             ItemStack itemStack3 = itemStack.copyWithCount(1);
-            this.setStackInHand(Hand.MAIN_HAND, itemStack3);
+            this.setItemInHand(InteractionHand.MAIN_HAND, itemStack3);
             this.decrementStackUnlessInCreative(player, itemStack);
-            this.getWorld().playSoundFromEntity(player, this, SoundEvents.ENTITY_ALLAY_ITEM_GIVEN, SoundCategory.NEUTRAL, 2.0F, 1.0F);
-            return ActionResult.SUCCESS;
-        } else if (!itemStack2.isEmpty() && hand == Hand.MAIN_HAND && itemStack.isEmpty()) {
-            this.equipStack(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-            this.getWorld().playSoundFromEntity(player, this, SoundEvents.ENTITY_ALLAY_ITEM_TAKEN, SoundCategory.NEUTRAL, 2.0F, 1.0F);
-            this.swingHand(Hand.MAIN_HAND);
+            this.level().playSound(player, this, SoundEvents.ALLAY_ITEM_GIVEN, SoundSource.NEUTRAL, 2.0F, 1.0F);
+            return InteractionResult.SUCCESS;
+        } else if (!itemStack2.isEmpty() && hand == InteractionHand.MAIN_HAND && itemStack.isEmpty()) {
+            this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            this.level().playSound(player, this, SoundEvents.ALLAY_ITEM_TAKEN, SoundSource.NEUTRAL, 2.0F, 1.0F);
+            this.swing(InteractionHand.MAIN_HAND);
 
-            player.giveItemStack(itemStack2);
-            return ActionResult.SUCCESS;
+            player.addItem(itemStack2);
+            return InteractionResult.SUCCESS;
         } else {
-            return super.interactMob(player, hand);
+            return super.mobInteract(player, hand);
         }
     }
 
-    protected Vec3i getItemPickUpRangeExpander() {
+    protected Vec3i getPickupReach() {
         return ITEM_PICKUP_RANGE_EXPANDER;
     }
 
-    public boolean canGather(ServerWorld world, ItemStack stack) {
-        ItemStack itemStack = this.getStackInHand(Hand.MAIN_HAND);
-        return !itemStack.isEmpty() && world.getGameRules().getBoolean(GameRules.DO_MOB_GRIEFING) && this.inventory.canInsert(stack) && this.areItemsEqual(itemStack, stack);
+    public boolean wantsToPickUp(ServerLevel world, ItemStack stack) {
+        ItemStack itemStack = this.getItemInHand(InteractionHand.MAIN_HAND);
+        return !itemStack.isEmpty() && world.getGameRules().get(GameRules.MOB_GRIEFING) && this.inventory.canAddItem(stack) && this.areItemsEqual(itemStack, stack);
     }
 
     private boolean areItemsEqual(ItemStack stack, ItemStack stack2) {
-        return ItemStack.areItemsEqual(stack, stack2) && !this.areDifferentPotions(stack, stack2);
+        return ItemStack.isSameItem(stack, stack2) && !this.areDifferentPotions(stack, stack2);
     }
 
     private boolean areDifferentPotions(ItemStack stack, ItemStack stack2) {
-        PotionContentsComponent potionContentsComponent = (PotionContentsComponent)stack.get(DataComponentTypes.POTION_CONTENTS);
-        PotionContentsComponent potionContentsComponent2 = (PotionContentsComponent)stack2.get(DataComponentTypes.POTION_CONTENTS);
+        PotionContents potionContentsComponent = (PotionContents)stack.get(DataComponents.POTION_CONTENTS);
+        PotionContents potionContentsComponent2 = (PotionContents)stack2.get(DataComponents.POTION_CONTENTS);
         return !Objects.equals(potionContentsComponent, potionContentsComponent2);
     }
 
-    public boolean isFlappingWings() {
-        return !this.isOnGround();
+    public boolean isFlapping() {
+        return !this.onGround();
     }
 
     public float getItemHoldAnimationTicks(float tickProgress) {
-        return MathHelper.lerp(tickProgress, this.lastItemHoldAnimationTicks, this.itemHoldAnimationTicks) / 5.0F;
+        return Mth.lerp(tickProgress, this.lastItemHoldAnimationTicks, this.itemHoldAnimationTicks) / 5.0F;
     }
 
     public float getSpinningAnimationTicks(float tickProgress) {
-        return MathHelper.lerp(tickProgress, this.lastSpinningAnimationTicks, this.spinningAnimationTicks) / 15.0F;
+        return Mth.lerp(tickProgress, this.lastSpinningAnimationTicks, this.spinningAnimationTicks) / 15.0F;
     }
 
-    public boolean areItemsDifferent(ItemStack stack, ItemStack stack2) {
+    public boolean equipmentHasChanged(ItemStack stack, ItemStack stack2) {
         return !this.areItemsEqual(stack, stack2);
     }
 
-    public boolean canImmediatelyDespawn(double distanceSquared) {
+    public boolean removeWhenFarAway(double distanceSquared) {
         return false;
     }
 
     @Override
-    public boolean isBreedingItem(ItemStack stack) {
+    public boolean isFood(ItemStack stack) {
         return false;
     }
 
     public String getUserId() {
-        return this.dataTracker.get(USERID);
+        return this.entityData.get(USERID);
     }
 
     public void setUserId(String user) {
-        this.dataTracker.set(USERID, user);
+        this.entityData.set(USERID, user);
     }
 
     public String getUsername() {
-        return this.dataTracker.get(USERNAME);
+        return this.entityData.get(USERNAME);
     }
 
     public void setUsername(String user) {
-        this.dataTracker.set(USERNAME, user);
+        this.entityData.set(USERNAME, user);
     }
 
     private int getChatCount() {
-        return this.dataTracker.get(CHAT_COUNT);
+        return this.entityData.get(CHAT_COUNT);
     }
 
     private void setChatCount(int count) {
-        this.dataTracker.set(CHAT_COUNT, count);
+        this.entityData.set(CHAT_COUNT, count);
     }
 
     @Override
-    public @Nullable PassiveEntity createChild(ServerWorld world, PassiveEntity entity) {
+    public @Nullable AgeableMob getBreedOffspring(ServerLevel world, AgeableMob entity) {
         return null;
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        super.initDataTracker(builder);
-        builder.add(USERID, "test");
-        builder.add(USERNAME, "test");
-        builder.add(CHAT_COUNT, 0);
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(USERID, "test");
+        builder.define(USERNAME, "test");
+        builder.define(CHAT_COUNT, 0);
     }
 
-    protected void writeCustomData(WriteView view) {
-        super.writeCustomData(view);
+    protected void addAdditionalSaveData(ValueOutput view) {
+        super.addAdditionalSaveData(view);
         view.putString("userId", getUserId());
         view.putString("username", getUsername());
         view.putInt("chat_count", getChatCount());
     }
 
-    protected void readCustomData(ReadView view) {
-        super.readCustomData(view);
-        setUserId(view.getString("userId", "test"));
-        setUsername(view.getString("username", "test"));
-        setChatCount(view.getInt("chat_count", 0));
+    protected void readAdditionalSaveData(ValueInput view) {
+        super.readAdditionalSaveData(view);
+        setUserId(view.getStringOr("userId", "test"));
+        setUsername(view.getStringOr("username", "test"));
+        setChatCount(view.getIntOr("chat_count", 0));
     }
 
-    protected boolean shouldFollowLeash() {
+    protected boolean shouldStayCloseToLeashHolder() {
         return false;
     }
 
-    private void decrementStackUnlessInCreative(PlayerEntity player, ItemStack stack) {
-        stack.decrementUnlessCreative(1, player);
+    private void decrementStackUnlessInCreative(Player player, ItemStack stack) {
+        stack.consume(1, player);
     }
 
-    public Vec3d getLeashOffset() {
-        return new Vec3d((double)0.0F, (double)this.getStandingEyeHeight() * 0.6, (double)this.getWidth() * 0.1);
+    public Vec3 getLeashOffset() {
+        return new Vec3((double)0.0F, (double)this.getEyeHeight() * 0.6, (double)this.getBbWidth() * 0.1);
     }
 
     public boolean isDancing() {
@@ -291,13 +290,13 @@ public class ChatterEntity extends TameableEntity {
         return false;
     }
 
-    public void handleStatus(byte status) {
+    public void handleEntityEvent(byte status) {
         if (status == 18) {
             for(int i = 0; i < 3; ++i) {
                 this.addHeartParticle();
             }
         } else {
-            super.handleStatus(status);
+            super.handleEntityEvent(status);
         }
 
     }
@@ -306,30 +305,30 @@ public class ChatterEntity extends TameableEntity {
         double d = this.random.nextGaussian() * 0.02;
         double e = this.random.nextGaussian() * 0.02;
         double f = this.random.nextGaussian() * 0.02;
-        this.getWorld().addParticleClient(ParticleTypes.HEART, this.getParticleX((double)1.0F), this.getRandomBodyY() + (double)0.5F, this.getParticleZ((double)1.0F), d, e, f);
+        this.level().addParticle(ParticleTypes.HEART, this.getRandomX((double)1.0F), this.getRandomY() + (double)0.5F, this.getRandomZ((double)1.0F), d, e, f);
     }
 
     public void setHeldItem(ItemStack stack) {
-        ItemStack itemStack2 = this.getStackInHand(Hand.MAIN_HAND);
+        ItemStack itemStack2 = this.getItemInHand(InteractionHand.MAIN_HAND);
         if(!itemStack2.isEmpty()) {
-            this.equipStack(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
             if(this.getOwner() != null) {
-                this.getWorld().playSoundFromEntity(this.getOwner(), this, SoundEvents.ENTITY_ALLAY_ITEM_TAKEN, SoundCategory.NEUTRAL, 2.0F, 1.0F);
+                this.level().playSound(this.getOwner(), this, SoundEvents.ALLAY_ITEM_TAKEN, SoundSource.NEUTRAL, 2.0F, 1.0F);
             }
-            this.swingHand(Hand.MAIN_HAND);
+            this.swing(InteractionHand.MAIN_HAND);
 
-            if(this.getWorld() instanceof ServerWorld serverWorld) {
-                this.dropStack(serverWorld, itemStack2);
+            if(this.level() instanceof ServerLevel serverWorld) {
+                this.spawnAtLocation(serverWorld, itemStack2);
             }
         }
-        this.setStackInHand(Hand.MAIN_HAND, stack.copyWithCount(1));
-        this.playSound(SoundEvents.ITEM_BOOK_PUT);
+        this.setItemInHand(InteractionHand.MAIN_HAND, stack.copyWithCount(1));
+        this.makeSound(SoundEvents.BOOK_PUT);
     }
 
     public void setChat(String msg) {
-        this.setCustomName(Text.literal(String.format("§l%s§r - %s", getUsername(), msg)));
+        this.setCustomName(Component.literal(String.format("§l%s§r - %s", getUsername(), msg)));
         if(this.getOwner() != null) {
-            this.playSound(SoundEvents.BLOCK_NOTE_BLOCK_BIT.value());
+            this.makeSound(SoundEvents.NOTE_BLOCK_BIT.value());
         }
         this.setChatCount(10*20);
     }

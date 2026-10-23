@@ -3,71 +3,75 @@ package net.blazinblaze.blazetwitchmod.entity.custom;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
-import net.minecraft.entity.AnimationState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.Leashable;
-import net.minecraft.entity.ai.goal.*;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.data.TrackedData;
-import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.fluid.FluidState;
+import net.minecraft.world.entity.AnimationState;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Entity.RemovalReason;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Leashable;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.goal.FloatGoal;
+import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerManager;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.text.Text;
-import net.minecraft.world.World;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
 
 import java.util.UUID;
 
-public class BeddyEntity extends PathAwareEntity implements Leashable {
-    private static final TrackedData<Integer> DESTRUCTION_TIMER = DataTracker.registerData(BeddyEntity.class, TrackedDataHandlerRegistry.INTEGER);
-    private static final TrackedData<String> USER = DataTracker.registerData(BeddyEntity.class, TrackedDataHandlerRegistry.STRING);
-    private static final TrackedData<String> UUID = DataTracker.registerData(BeddyEntity.class, TrackedDataHandlerRegistry.STRING);
+public class BeddyEntity extends PathfinderMob implements Leashable {
+    private static final EntityDataAccessor<Integer> DESTRUCTION_TIMER = SynchedEntityData.defineId(BeddyEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<String> USER = SynchedEntityData.defineId(BeddyEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<String> UUID = SynchedEntityData.defineId(BeddyEntity.class, EntityDataSerializers.STRING);
     public final AnimationState idleAnimationState = new AnimationState();
     private int idleAnimationTimeout = 0;
 
-    private Text label = Text.literal("§8§lBeddy");
+    private Component label = Component.literal("§8§lBeddy");
 
-    public BeddyEntity(World world) {
+    public BeddyEntity(Level world) {
         this(BlazinBlazeTwitchModEntities.BEDDY_ENTITY, world);
         this.setCustomNameVisible(true);
     }
 
-    public BeddyEntity(EntityType<? extends PathAwareEntity> entityType, World world) {
+    public BeddyEntity(EntityType<? extends PathfinderMob> entityType, Level world) {
         super(entityType, world);
         this.setCustomNameVisible(true);
     }
 
     @Override
-    protected void initGoals() {
-        this.goalSelector.add(0, new SwimGoal(this));
-        this.goalSelector.add(1, new WanderAroundGoal(this, 1.0D));
-        this.goalSelector.add(2, new WanderAroundFarGoal(this, 1.0D));
-        this.goalSelector.add(3, new LookAtEntityGoal(this, PlayerEntity.class, 2.0f));
+    protected void registerGoals() {
+        this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new RandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(2, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(3, new LookAtPlayerGoal(this, Player.class, 2.0f));
     }
 
-    public static DefaultAttributeContainer.Builder createCubeAttributes() {
-        return PathAwareEntity.createMobAttributes()
-                .add(EntityAttributes.MAX_HEALTH, 1000D)
-                .add(EntityAttributes.MOVEMENT_SPEED, 0.25F)
-                .add(EntityAttributes.KNOCKBACK_RESISTANCE, 2F);
+    public static AttributeSupplier.Builder createCubeAttributes() {
+        return PathfinderMob.createMobAttributes()
+                .add(Attributes.MAX_HEALTH, 1000D)
+                .add(Attributes.MOVEMENT_SPEED, 0.25F)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 2F);
     }
 
     private void setupAnimationStates() {
         if (this.idleAnimationTimeout <= 0) {
             this.idleAnimationTimeout = 40;
-            this.idleAnimationState.start(this.age);
+            this.idleAnimationState.start(this.tickCount);
         } else {
             --this.idleAnimationTimeout;
         }
@@ -77,7 +81,7 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
     public void tick() {
         super.tick();
 
-        if(this.getWorld().isClient()) {
+        if(this.level().isClientSide()) {
             setupAnimationStates();
         }
 
@@ -86,9 +90,9 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
         if(destructionTimer >= 1200) {
             Entity leashedEntity = this.getLeashHolder();
             if(leashedEntity != null) {
-                if(leashedEntity instanceof PlayerEntity plr) {
-                    plr.removeStatusEffect(StatusEffects.SLOWNESS);
-                    plr.removeStatusEffect(StatusEffects.BLINDNESS);
+                if(leashedEntity instanceof Player plr) {
+                    plr.removeEffect(MobEffects.SLOWNESS);
+                    plr.removeEffect(MobEffects.BLINDNESS);
                 }
             }
             this.remove(RemovalReason.DISCARDED);
@@ -97,13 +101,13 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
             destructionTimer = getDestructionTimer();
             double timeToSubstract = Math.floor((double) destructionTimer / 20);
             double time = (60 - timeToSubstract);
-            label = Text.literal(String.format("§8§l%s's Beddy - §r", getUser()) + String.format(String.valueOf(time)));
+            label = Component.literal(String.format("§8§l%s's Beddy - §r", getUser()) + String.format(String.valueOf(time)));
             Entity leashedEntity = this.getLeashHolder();
             if(leashedEntity != null) {
-                if(leashedEntity instanceof PlayerEntity plr) {
-                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, -1, 255));
-                    plr.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, -1));
-                    this.attachLeash(plr, true);
+                if(leashedEntity instanceof Player plr) {
+                    plr.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, -1, 255));
+                    plr.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, -1));
+                    this.setLeashedTo(plr, true);
                     //if(this.distanceTo(leashedEntity) >= 12.0F) {
                         //this.teleport(leashedEntity.getX(), leashedEntity.getY() + 10, leashedEntity.getZ(), false);
                     //}
@@ -111,12 +115,12 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
             }else {
                 MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
                 if(server != null) {
-                    PlayerManager manager = server.getPlayerManager();
-                    ServerPlayerEntity player = manager.getPlayer(java.util.UUID.fromString(getUUID()));
-                    if(player != null && !player.isDisconnected()) {
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, -1, 255));
-                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.BLINDNESS, -1));
-                        this.attachLeash(player, true);
+                    PlayerList manager = server.getPlayerList();
+                    ServerPlayer player = manager.getPlayer(java.util.UUID.fromString(getPlayerUUID()));
+                    if(player != null && !player.hasDisconnected()) {
+                        player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, -1, 255));
+                        player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, -1));
+                        this.setLeashedTo(player, true);
                         //if(this.distanceTo(player) >= 12.0F) {
                             //this.teleport(player.getX(), player.getY() + 10, player.getZ(), false);
                         //}
@@ -127,68 +131,68 @@ public class BeddyEntity extends PathAwareEntity implements Leashable {
     }
 
     @Override
-    public double getLeashSnappingDistance() {
+    public double leashSnapDistance() {
         return (double)100000000000.0F;
     }
 
     public int getDestructionTimer() {
-        return this.dataTracker.get(DESTRUCTION_TIMER);
+        return this.entityData.get(DESTRUCTION_TIMER);
     }
 
     public void setDestructionTimer(int destructionProgress) {
-        this.dataTracker.set(DESTRUCTION_TIMER, destructionProgress);
+        this.entityData.set(DESTRUCTION_TIMER, destructionProgress);
     }
 
     public String getUser() {
-        return this.dataTracker.get(USER);
+        return this.entityData.get(USER);
     }
 
     public void setUser(String user) {
-        this.dataTracker.set(USER, user);
+        this.entityData.set(USER, user);
     }
 
-    public String getUUID() {
-        return this.dataTracker.get(UUID);
+    public String getPlayerUUID() {
+        return this.entityData.get(UUID);
     }
 
     public void setUUID(String user) {
-        this.dataTracker.set(UUID, user);
+        this.entityData.set(UUID, user);
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        super.initDataTracker(builder);
-        builder.add(DESTRUCTION_TIMER, 0);
-        builder.add(USER, "test");
-        builder.add(UUID, "test");
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(DESTRUCTION_TIMER, 0);
+        builder.define(USER, "test");
+        builder.define(UUID, "test");
     }
 
     @Override
-    protected void writeCustomData(WriteView nbt) {
+    protected void addAdditionalSaveData(ValueOutput nbt) {
         nbt.putInt("destruction_timer", getDestructionTimer());
         nbt.putString("user", getUser());
-        nbt.putString("uuid", getUUID());
+        nbt.putString("uuid", getPlayerUUID());
     }
 
     @Override
-    public Text getDisplayName() {
+    public Component getDisplayName() {
         return label;
     }
 
     @Override
-    public boolean shouldRenderName() {
+    public boolean shouldShowName() {
         return true;
     }
 
     @Override
-    protected void readCustomData(ReadView nbt) {
-        setDestructionTimer(nbt.getInt("destruction_timer", 0));
-        setUser(nbt.getString("user", "test"));
-        setUUID(nbt.getString("uuid", "test"));
+    protected void readAdditionalSaveData(ValueInput nbt) {
+        setDestructionTimer(nbt.getIntOr("destruction_timer", 0));
+        setUser(nbt.getStringOr("user", "test"));
+        setUUID(nbt.getStringOr("uuid", "test"));
     }
 
     @Override
-    public boolean damage(ServerWorld world, DamageSource source, float amount) {
+    public boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
         return false;
     }
 }

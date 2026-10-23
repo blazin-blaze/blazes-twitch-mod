@@ -1,13 +1,13 @@
 package net.blazinblaze.blazetwitchmod.mixin.client;
 
 import com.mojang.text2speech.Narrator;
-import net.minecraft.client.option.NarratorMode;
-import net.minecraft.client.util.NarratorManager;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
+import net.minecraft.client.NarratorStatus;
+import net.minecraft.client.GameNarrator;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -17,22 +17,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.w3c.dom.Text;
 
-@Mixin(NarratorManager.class)
+@Mixin(GameNarrator.class)
 public abstract class NarrateTTSMixin {
-    @Shadow protected abstract NarratorMode getNarratorMode();
+    @Shadow protected abstract NarratorStatus getStatus();
 
     @Shadow @Final private Narrator narrator;
 
-    @Shadow protected abstract void say(String text, boolean interrupt);
+    @Shadow protected abstract void narrateMessage(String text, boolean interrupt);
 
-    @Inject(method = "narrate(Lnet/minecraft/text/Text;)V", at = @At("HEAD"), cancellable = true)
-    public void narrateWithoutActive(net.minecraft.text.Text message, CallbackInfo ci) {
-        if(this.getNarratorMode().shouldNarrateSystem() && !message.getString().isEmpty() && this.narrator.active()) {
+    @Inject(method = "saySystemChatQueued(Lnet/minecraft/network/chat/Component;)V", at = @At("HEAD"), cancellable = true)
+    public void narrateWithoutActive(net.minecraft.network.chat.Component message, CallbackInfo ci) {
+        if(this.getStatus().shouldNarrateSystem() && !message.getString().isEmpty() && this.narrator.active()) {
             ci.cancel();
         }else {
             if(message.getString().startsWith("[TTS]")) {
                 this.narrator.clear();
-                this.say(message.getString().substring("[TTS]".length()), true);
+                this.narrateMessage(message.getString().substring("[TTS]".length()), true);
             }else {
                 ci.cancel();
             }

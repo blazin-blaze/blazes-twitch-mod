@@ -23,9 +23,6 @@
 		],
 		"fabric-datagen": [
 			"net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchModDataGenerator"
-		],
-		"mm:early_risers": [
-			"net.blazinblaze.blazetwitchmod.mm.EarlyRisers"
 		]
 	},
 	"mixins": [
@@ -36,13 +33,13 @@
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.16.10",
-		"minecraft": ">=1.21.6 <=1.21.8",
-		"java": ">=21",
-		"fabric-api": "*",
-		"twitch4j": "*"
+		"fabricloader": ">=0.19.0",
+		"minecraft": ">=26.1",
+		"java": ">=25",
+		"fabric-api": "*"
 	},
 	"suggests": {
 		"another-mod": "*"
-	}
+	},
+	"accessWidener": "blaze-twitch-mod.classtweaker"
 }

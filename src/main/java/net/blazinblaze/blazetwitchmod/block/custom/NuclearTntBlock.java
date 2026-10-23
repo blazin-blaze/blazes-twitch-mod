@@ -2,51 +2,54 @@ package net.blazinblaze.blazetwitchmod.block.custom;
 
 import com.mojang.serialization.MapCodec;
 import net.blazinblaze.blazetwitchmod.entity.custom.NuclearTntEntity;
-import net.minecraft.block.*;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.TntEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.stat.Stats;
-import net.minecraft.state.StateManager;
-import net.minecraft.state.property.BooleanProperty;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.block.WireOrientation;
-import net.minecraft.world.event.GameEvent;
-import net.minecraft.world.explosion.Explosion;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.PrimedTnt;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.stats.Stats;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.redstone.Orientation;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.Explosion;
 import org.jetbrains.annotations.Nullable;
 
 public class NuclearTntBlock extends Block {
 
-    public static final MapCodec<NuclearTntBlock> CODEC = createCodec(NuclearTntBlock::new);
-    public static final BooleanProperty UNSTABLE = Properties.UNSTABLE;
+    public static final MapCodec<NuclearTntBlock> CODEC = simpleCodec(NuclearTntBlock::new);
+    public static final BooleanProperty UNSTABLE = BlockStateProperties.UNSTABLE;
 
     @Override
-    public MapCodec<NuclearTntBlock> getCodec() {
+    public MapCodec<NuclearTntBlock> codec() {
         return CODEC;
     }
 
-    public NuclearTntBlock(AbstractBlock.Settings settings) {
+    public NuclearTntBlock(BlockBehaviour.Properties settings) {
         super(settings);
-        this.setDefaultState(this.getDefaultState().with(UNSTABLE, false));
+        this.registerDefaultState(this.defaultBlockState().setValue(UNSTABLE, false));
     }
 
     @Override
-    protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
-        if (!oldState.isOf(state.getBlock())) {
-            if (world.isReceivingRedstonePower(pos)) {
+    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+        if (!oldState.is(state.getBlock())) {
+            if (world.hasNeighborSignal(pos)) {
                 primeTnt(world, pos);
                 world.removeBlock(pos, false);
             }
@@ -54,68 +57,68 @@ public class NuclearTntBlock extends Block {
     }
 
     @Override
-    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation wireOrientation, boolean notify) {
-        if (world.isReceivingRedstonePower(pos)) {
+    protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
+        if (world.hasNeighborSignal(pos)) {
             primeTnt(world, pos);
             world.removeBlock(pos, false);
         }
     }
 
     @Override
-    public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
-        if (!world.isClient() && !player.isCreative() && (Boolean)state.get(UNSTABLE)) {
+    public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
+        if (!world.isClientSide() && !player.isCreative() && (Boolean)state.getValue(UNSTABLE)) {
             primeTnt(world, pos);
         }
 
-        return super.onBreak(world, pos, state, player);
+        return super.playerWillDestroy(world, pos, state, player);
     }
 
     @Override
-    public void onDestroyedByExplosion(ServerWorld world, BlockPos pos, Explosion explosion) {
-        NuclearTntEntity nuclearTntEntity = new NuclearTntEntity(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, explosion.getCausingEntity());
+    public void wasExploded(ServerLevel world, BlockPos pos, Explosion explosion) {
+        NuclearTntEntity nuclearTntEntity = new NuclearTntEntity(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, explosion.getIndirectSourceEntity());
         int i = nuclearTntEntity.getFuse();
-        nuclearTntEntity.setFuse((short)(world.random.nextInt(i / 4) + i / 8));
-        world.spawnEntity(nuclearTntEntity);
+        nuclearTntEntity.setFuse((short)(world.getRandom().nextInt(i / 4) + i / 8));
+        world.addFreshEntity(nuclearTntEntity);
     }
 
-    public static void primeTnt(World world, BlockPos pos) {
+    public static void primeTnt(Level world, BlockPos pos) {
         primeTnt(world, pos, null);
     }
 
-    private static void primeTnt(World world, BlockPos pos, @Nullable LivingEntity igniter) {
-        if (!world.isClient) {
+    private static void primeTnt(Level world, BlockPos pos, @Nullable LivingEntity igniter) {
+        if (!world.isClientSide()) {
             NuclearTntEntity nuclearTntEntity = new NuclearTntEntity(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, igniter);
-            world.spawnEntity(nuclearTntEntity);
-            world.playSound(null, nuclearTntEntity.getX(), nuclearTntEntity.getY(), nuclearTntEntity.getZ(), SoundEvents.ENTITY_TNT_PRIMED, SoundCategory.BLOCKS, 1.0F, 0.2F);
-            world.emitGameEvent(igniter, GameEvent.PRIME_FUSE, pos);
+            world.addFreshEntity(nuclearTntEntity);
+            world.playSound(null, nuclearTntEntity.getX(), nuclearTntEntity.getY(), nuclearTntEntity.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 0.2F);
+            world.gameEvent(igniter, GameEvent.PRIME_FUSE, pos);
         }
     }
 
     @Override
-    protected ActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (!stack.isOf(Items.FLINT_AND_STEEL) && !stack.isOf(Items.FIRE_CHARGE)) {
-            return super.onUseWithItem(stack, state, world, pos, player, hand, hit);
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!stack.is(Items.FLINT_AND_STEEL) && !stack.is(Items.FIRE_CHARGE)) {
+            return super.useItemOn(stack, state, world, pos, player, hand, hit);
         } else {
             primeTnt(world, pos, player);
-            world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL_AND_REDRAW);
+            world.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL_IMMEDIATE);
             Item item = stack.getItem();
-            if (stack.isOf(Items.FLINT_AND_STEEL)) {
-                stack.damage(1, player, LivingEntity.getSlotForHand(hand));
+            if (stack.is(Items.FLINT_AND_STEEL)) {
+                stack.hurtAndBreak(1, player, hand.asEquipmentSlot());
             } else {
-                stack.decrementUnlessCreative(1, player);
+                stack.consume(1, player);
             }
 
-            player.incrementStat(Stats.USED.getOrCreateStat(item));
-            return ActionResult.SUCCESS;
+            player.awardStat(Stats.ITEM_USED.get(item));
+            return InteractionResult.SUCCESS;
         }
     }
 
     @Override
-    protected void onProjectileHit(World world, BlockState state, BlockHitResult hit, ProjectileEntity projectile) {
-        if (world instanceof ServerWorld serverWorld) {
+    protected void onProjectileHit(Level world, BlockState state, BlockHitResult hit, Projectile projectile) {
+        if (world instanceof ServerLevel serverWorld) {
             BlockPos blockPos = hit.getBlockPos();
             Entity entity = projectile.getOwner();
-            if (projectile.isOnFire() && projectile.canModifyAt(serverWorld, blockPos)) {
+            if (projectile.isOnFire() && projectile.mayInteract(serverWorld, blockPos)) {
                 primeTnt(world, blockPos, entity instanceof LivingEntity ? (LivingEntity)entity : null);
                 world.removeBlock(blockPos, false);
             }
@@ -123,12 +126,12 @@ public class NuclearTntBlock extends Block {
     }
 
     @Override
-    public boolean shouldDropItemsOnExplosion(Explosion explosion) {
+    public boolean dropFromExplosion(Explosion explosion) {
         return false;
     }
 
     @Override
-    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(UNSTABLE);
     }
 }

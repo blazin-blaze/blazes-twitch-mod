@@ -1,10 +1,10 @@
 package net.blazinblaze.blazetwitchmod.effect;
 
-import net.minecraft.entity.effect.StatusEffect;
-import net.minecraft.entity.effect.StatusEffectCategory;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 
-public class ImmunityShieldEffect extends StatusEffect {
+public class ImmunityShieldEffect extends MobEffect {
     public ImmunityShieldEffect() {
-        super(StatusEffectCategory.BENEFICIAL, 3129856);
+        super(MobEffectCategory.BENEFICIAL, 3129856);
     }
 }

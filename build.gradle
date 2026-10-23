@@ -1,7 +1,7 @@
 plugins {
-	id 'fabric-loom' version '1.11-SNAPSHOT'
+	id 'net.fabricmc.fabric-loom' version '1.16-SNAPSHOT'
 	id 'maven-publish'
-	alias(libs.plugins.configuration)
+	//alias(libs.plugins.configuration)
 }
 
 version = project.mod_version
@@ -31,6 +31,8 @@ loom {
 		}
 	}
 
+	accessWidenerPath = file("src/main/resources/blaze-twitch-mod.classtweaker")
+
 }
 
 fabricApi {
@@ -42,32 +44,98 @@ fabricApi {
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "net.minecraft:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	//mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation "com.github.twitch4j:twitch4j-fabric:1.25.0+1.11.0"
-	implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
-	include group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
-	modImplementation "io.github.iprodigy.bttv:bttv4j-api:1.0.0"
+	//twitch4j stuff
+
+	testImplementation(platform("org.junit:junit-bom:5.9.2"))
+	testImplementation("org.junit.jupiter:junit-jupiter")
+
+	include api("com.github.twitch4j:twitch4j:${project.library_version}") {
+		exclude group: "org.slf4j", module: "slf4j-api"
+	}
+	include "com.github.twitch4j:twitch4j-auth:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-chat:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-client-websocket:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-common:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-eventsub-common:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-eventsub-websocket:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-extensions:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-graphql:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-helix:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-kraken:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-messaginginterface:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-pubsub:${project.library_version}"
+	include "com.github.twitch4j:twitch4j-util:${project.library_version}"
+
+	var apollo = "2.5.14"
+	var events4j = "0.12.2"
+	var jackson = "2.19.0"
+	var openfeign = "13.6"
+	var xanthic = "0.7.1"
+
+	include "com.apollographql.apollo:apollo-api-jvm:$apollo"
+	include "com.apollographql.apollo:apollo-http-cache-api:$apollo"
+	include "com.apollographql.apollo:apollo-normalized-cache-api-jvm:$apollo"
+	include "com.apollographql.apollo:apollo-normalized-cache-jvm:$apollo"
+	include "com.apollographql.apollo:apollo-runtime:$apollo"
+	include "com.benasher44:uuid-jvm:0.2.0"
+	include "com.bucket4j:bucket4j_jdk8-core:8.10.1"
+	include "com.fasterxml.jackson.core:jackson-annotations:$jackson"
+	include "com.fasterxml.jackson.core:jackson-core:$jackson"
+	include "com.fasterxml.jackson.core:jackson-databind:$jackson"
+	include "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson"
+	include "com.github.ben-manes.caffeine:caffeine:2.9.3"
+	include "com.github.philippheuer.credentialmanager:credentialmanager:0.3.1"
+	include "com.github.philippheuer.events4j:events4j-api:$events4j"
+	include "com.github.philippheuer.events4j:events4j-core:$events4j"
+	include "com.github.philippheuer.events4j:events4j-handler-simple:$events4j"
+	include "com.github.tony19:named-regexp:1.0.0"
+	include "com.google.errorprone:error_prone_annotations:2.10.0"
+	include "com.neovisionaries:nv-websocket-client:2.14"
+	include "com.netflix.archaius:archaius-core:0.4.1"
+	include "com.netflix.hystrix:hystrix-core:1.5.18"
+	include "com.nytimes.android:cache:2.0.2"
+	include "com.squareup.okhttp3:okhttp:4.12.0"
+	include "com.squareup.okio:okio-jvm:3.6.0"
+	include "commons-configuration:commons-configuration:1.10"
+	include "commons-lang:commons-lang:2.6"
+	include "io.github.openfeign:feign-core:$openfeign"
+	include "io.github.openfeign:feign-hystrix:$openfeign"
+	include "io.github.openfeign:feign-jackson:$openfeign"
+	include "io.github.openfeign:feign-okhttp:$openfeign"
+	include "io.github.openfeign:feign-slf4j:$openfeign"
+	include "io.github.xanthic.cache:cache-api:$xanthic"
+	include "io.github.xanthic.cache:cache-core:$xanthic"
+	include "io.github.xanthic.cache:cache-provider-caffeine:$xanthic"
+	include "io.reactivex:rxjava:1.2.0"
+	include "net.fabricmc:fabric-language-kotlin:1.10.19+kotlin.1.9.23"
+	include "org.hdrhistogram:HdrHistogram:2.1.9"
+
+	implementation "io.github.iprodigy.bttv:bttv4j-api:1.0.0"
 	include "io.github.iprodigy.bttv:bttv4j-api:1.0.0"
 	include "io.github.iprodigy.bttv:bttv4j-common:1.0.0"
-	modImplementation 'org.yaml:snakeyaml:2.4'
+
+	include "io.github.resilience4j:resilience4j-core:2.4.0"
+	include "io.github.resilience4j:resilience4j-ratelimiter:2.4.0"
+	include "io.github.resilience4j:resilience4j-circuitbreaker:2.4.0"
+	include "io.github.resilience4j:resilience4j-bulkhead:2.4.0"
+	include "io.github.resilience4j:resilience4j-timelimiter:2.4.0"
+	include "io.github.resilience4j:resilience4j-cache:2.4.0"
+	include "io.github.resilience4j:resilience4j-retry:2.4.0"
+	include "io.github.resilience4j:resilience4j-feign:2.4.0"
+
+	//end of twitch4j
+
+	implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
+	include group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
+	implementation 'org.yaml:snakeyaml:2.4'
 	include 'org.yaml:snakeyaml:2.4'
 	include libs.jspecify
-	include "io.github.resilience4j:resilience4j-core:2.3.0"
-	include "io.github.resilience4j:resilience4j-ratelimiter:2.3.0"
-	include "io.github.resilience4j:resilience4j-circuitbreaker:2.3.0"
-	include "io.github.resilience4j:resilience4j-bulkhead:2.3.0"
-	include "io.github.resilience4j:resilience4j-timelimiter:2.3.0"
-	include "io.github.resilience4j:resilience4j-cache:2.3.0"
-	include "io.github.resilience4j:resilience4j-retry:2.3.0"
-	include "io.github.resilience4j:resilience4j-feign:2.3.0"
-
-	implementation 'com.github.Chocohead:Fabric-ASM:v2.3'
-	include 'com.github.Chocohead:Fabric-ASM:v2.3'
 }
 
 processResources {
@@ -79,7 +147,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 25
 }
 
 java {
@@ -88,8 +156,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {

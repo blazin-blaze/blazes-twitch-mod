@@ -1,74 +1,75 @@
 package net.blazinblaze.blazetwitchmod.entity.renderer;
 
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
-import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.MobEntityRenderer;
-import net.minecraft.client.render.entity.model.CatEntityModel;
-import net.minecraft.client.render.entity.model.EntityModelLayers;
-import net.minecraft.client.render.entity.model.SalmonEntityModel;
-import net.minecraft.client.render.entity.state.CatEntityRenderState;
-import net.minecraft.client.render.entity.state.SalmonEntityRenderState;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.entity.passive.CatEntity;
-import net.minecraft.entity.passive.SalmonEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.RotationAxis;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.animal.fish.SalmonModel;
+import net.minecraft.client.renderer.entity.state.CatRenderState;
+import net.minecraft.client.renderer.entity.state.SalmonRenderState;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.world.entity.animal.feline.Cat;
+import net.minecraft.world.entity.animal.fish.Salmon;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
+import com.mojang.math.Axis;
 
-public class LifeLinkedFishRenderer extends MobEntityRenderer<SalmonEntity, SalmonEntityRenderState, SalmonEntityModel>  {
-    private static final Identifier TEXTURE = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_fish/life_linked_fish.png");
-    private final SalmonEntityModel smallModel;
-    private final SalmonEntityModel mediumModel;
-    private final SalmonEntityModel largeModel;
+public class LifeLinkedFishRenderer extends MobRenderer<Salmon, SalmonRenderState, SalmonModel>  {
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_fish/life_linked_fish.png");
+    private final SalmonModel smallModel;
+    private final SalmonModel mediumModel;
+    private final SalmonModel largeModel;
 
-    public LifeLinkedFishRenderer(EntityRendererFactory.Context context) {
-        super(context, new SalmonEntityModel(context.getPart(EntityModelLayers.SALMON)), 0.4F);
-        this.smallModel = new SalmonEntityModel(context.getPart(EntityModelLayers.SALMON_SMALL));
-        this.mediumModel = new SalmonEntityModel(context.getPart(EntityModelLayers.SALMON));
-        this.largeModel = new SalmonEntityModel(context.getPart(EntityModelLayers.SALMON_LARGE));
+    public LifeLinkedFishRenderer(EntityRendererProvider.Context context) {
+        super(context, new SalmonModel(context.bakeLayer(ModelLayers.SALMON)), 0.4F);
+        this.smallModel = new SalmonModel(context.bakeLayer(ModelLayers.SALMON_SMALL));
+        this.mediumModel = new SalmonModel(context.bakeLayer(ModelLayers.SALMON));
+        this.largeModel = new SalmonModel(context.bakeLayer(ModelLayers.SALMON_LARGE));
     }
 
-    public void updateRenderState(SalmonEntity salmonEntity, SalmonEntityRenderState salmonEntityRenderState, float f) {
-        super.updateRenderState(salmonEntity, salmonEntityRenderState, f);
+    public void extractRenderState(Salmon salmonEntity, SalmonRenderState salmonEntityRenderState, float f) {
+        super.extractRenderState(salmonEntity, salmonEntityRenderState, f);
         salmonEntityRenderState.variant = salmonEntity.getVariant();
     }
 
-    public Identifier getTexture(SalmonEntityRenderState salmonEntityRenderState) {
+    public Identifier getTextureLocation(SalmonRenderState salmonEntityRenderState) {
         return TEXTURE;
     }
 
-    public SalmonEntityRenderState createRenderState() {
-        return new SalmonEntityRenderState();
+    public SalmonRenderState createRenderState() {
+        return new SalmonRenderState();
     }
 
-    protected void setupTransforms(SalmonEntityRenderState salmonEntityRenderState, MatrixStack matrixStack, float f, float g) {
-        super.setupTransforms(salmonEntityRenderState, matrixStack, f, g);
+    protected void setupRotations(SalmonRenderState salmonEntityRenderState, PoseStack matrixStack, float f, float g) {
+        super.setupRotations(salmonEntityRenderState, matrixStack, f, g);
         float h = 1.0F;
         float i = 1.0F;
-        if (!salmonEntityRenderState.touchingWater) {
+        if (!salmonEntityRenderState.isInWater) {
             h = 1.3F;
             i = 1.7F;
         }
 
-        float j = h * 4.3F * MathHelper.sin(i * 0.6F * salmonEntityRenderState.age);
-        matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(j));
-        if (!salmonEntityRenderState.touchingWater) {
+        float j = h * 4.3F * Mth.sin(i * 0.6F * salmonEntityRenderState.ageInTicks);
+        matrixStack.mulPose(Axis.YP.rotationDegrees(j));
+        if (!salmonEntityRenderState.isInWater) {
             matrixStack.translate(0.2F, 0.1F, 0.0F);
-            matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(90.0F));
+            matrixStack.mulPose(Axis.ZP.rotationDegrees(90.0F));
         }
 
     }
 
-    public void render(SalmonEntityRenderState salmonEntityRenderState, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i) {
-        if (salmonEntityRenderState.variant == SalmonEntity.Variant.SMALL) {
+    public void submit(SalmonRenderState salmonEntityRenderState, PoseStack matrixStack, SubmitNodeCollector orderedRenderCommandQueue, CameraRenderState cameraRenderState) {
+        if (salmonEntityRenderState.variant == Salmon.Variant.SMALL) {
             this.model = this.smallModel;
-        } else if (salmonEntityRenderState.variant == SalmonEntity.Variant.LARGE) {
+        } else if (salmonEntityRenderState.variant == Salmon.Variant.LARGE) {
             this.model = this.largeModel;
         } else {
             this.model = this.mediumModel;
         }
 
-        super.render(salmonEntityRenderState, matrixStack, vertexConsumerProvider, i);
+        super.submit(salmonEntityRenderState, matrixStack, orderedRenderCommandQueue, cameraRenderState);
     }
 }

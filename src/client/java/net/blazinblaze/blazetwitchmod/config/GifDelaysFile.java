@@ -3,7 +3,7 @@ package net.blazinblaze.blazetwitchmod.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
-import net.minecraft.client.texture.NativeImage;
+import com.mojang.blaze3d.platform.NativeImage;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

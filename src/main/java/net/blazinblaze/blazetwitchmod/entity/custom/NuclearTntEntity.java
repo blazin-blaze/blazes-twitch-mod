@@ -3,42 +3,47 @@ package net.blazinblaze.blazetwitchmod.entity.custom;
 import net.blazinblaze.blazetwitchmod.block.BlazinBlazeTwitchModBlocks;
 import net.blazinblaze.blazetwitchmod.entity.BlazinBlazeTwitchModEntities;
 import net.blazinblaze.blazetwitchmod.util.NuclearExplosionBehavior;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.*;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.data.TrackedData;
-import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtHelper;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Entity.MovementEmission;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.entity.item.PrimedTnt;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.RegistryOps;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.TeleportTarget;
-import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
-import net.minecraft.world.explosion.ExplosionBehavior;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.RegistryOps;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.ExplosionDamageCalculator;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class NuclearTntEntity extends TntEntity {
-    private static final TrackedData<Integer> FUSE;
-    private static final TrackedData<BlockState> BLOCK_STATE;
+public class NuclearTntEntity extends PrimedTnt {
+    private static final EntityDataAccessor<Integer> FUSE;
+    private static final EntityDataAccessor<BlockState> BLOCK_STATE;
     private static final short DEFAULT_FUSE = 80;
     private static final float DEFAULT_EXPLOSION_POWER = 200.0F;
     private static final BlockState DEFAULT_BLOCK_STATE;
@@ -51,100 +56,100 @@ public class NuclearTntEntity extends TntEntity {
     private boolean teleported;
     private float explosionPower;
 
-    public NuclearTntEntity(EntityType<? extends TntEntity> entityType, World world) {
+    public NuclearTntEntity(EntityType<? extends PrimedTnt> entityType, Level world) {
         super(entityType, world);
         this.explosionPower = 200.0F;
-        this.intersectionChecked = true;
+        this.blocksBuilding = true;
     }
 
-    public NuclearTntEntity(World world, double x, double y, double z, @Nullable LivingEntity igniter) {
+    public NuclearTntEntity(Level world, double x, double y, double z, @Nullable LivingEntity igniter) {
         this(BlazinBlazeTwitchModEntities.NUCLEAR_TNT_ENTITY, world);
-        this.setPosition(x, y, z);
-        double d = world.random.nextDouble() * (double)((float)Math.PI * 2F);
-        this.setVelocity(-Math.sin(d) * 0.02, (double)0.2F, -Math.cos(d) * 0.02);
+        this.setPos(x, y, z);
+        double d = world.getRandom().nextDouble() * (double)((float)Math.PI * 2F);
+        this.setDeltaMovement(-Math.sin(d) * 0.02, (double)0.2F, -Math.cos(d) * 0.02);
         this.setFuse(80);
-        this.lastX = x;
-        this.lastY = y;
-        this.lastZ = z;
+        this.xo = x;
+        this.yo = y;
+        this.zo = z;
         this.causingEntity = igniter;
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        super.initDataTracker(builder);
-        builder.add(FUSE, 80);
-        builder.add(BLOCK_STATE, DEFAULT_BLOCK_STATE);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(FUSE, 80);
+        builder.define(BLOCK_STATE, DEFAULT_BLOCK_STATE);
     }
 
     @Override
-    protected Entity.MoveEffect getMoveEffect() {
-        return MoveEffect.NONE;
+    protected Entity.MovementEmission getMovementEmission() {
+        return MovementEmission.NONE;
     }
 
     @Override
-    public boolean canHit() {
+    public boolean isPickable() {
         return !this.isRemoved();
     }
 
     @Override
-    protected double getGravity() {
+    protected double getDefaultGravity() {
         return 0.04;
     }
 
     @Override
     public void tick() {
-        this.tickPortalTeleportation();
+        this.handlePortal();
         this.applyGravity();
-        this.move(MovementType.SELF, this.getVelocity());
-        this.tickBlockCollision();
-        this.setVelocity(this.getVelocity().multiply(0.98));
-        if (this.isOnGround()) {
-            this.setVelocity(this.getVelocity().multiply(0.7, (double)-0.5F, 0.7));
+        this.move(MoverType.SELF, this.getDeltaMovement());
+        this.applyEffectsFromBlocks();
+        this.setDeltaMovement(this.getDeltaMovement().scale(0.98));
+        if (this.onGround()) {
+            this.setDeltaMovement(this.getDeltaMovement().multiply(0.7, (double)-0.5F, 0.7));
         }
 
         int i = this.getFuse() - 1;
         this.setFuse(i);
         if (i <= 0) {
             this.discard();
-            if (!this.getWorld().isClient) {
+            if (!this.level().isClientSide()) {
                 this.explode();
             }
         } else {
-            this.updateWaterState();
-            if (this.getWorld().isClient) {
-                this.getWorld().addParticleClient(ParticleTypes.SMOKE, this.getX(), this.getY() + (double)0.5F, this.getZ(), (double)0.0F, (double)0.0F, (double)0.0F);
+            this.updateFluidInteraction();
+            if (this.level().isClientSide()) {
+                this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + (double)0.5F, this.getZ(), (double)0.0F, (double)0.0F, (double)0.0F);
             }
         }
 
     }
 
     private void explode() {
-        World var2 = this.getWorld();
-        if (var2 instanceof ServerWorld serverWorld) {
-            if (serverWorld.getGameRules().getBoolean(GameRules.TNT_EXPLODES)) {
-                this.getWorld().createExplosion(this, Explosion.createDamageSource(this.getWorld(), this), this.teleported ? TELEPORTED_EXPLOSION_BEHAVIOR : null, this.getX(), this.getBodyY((double)0.0625F), this.getZ(), this.explosionPower, true, World.ExplosionSourceType.TNT);
+        Level var2 = this.level();
+        if (var2 instanceof ServerLevel serverWorld) {
+            if (serverWorld.getGameRules().get(GameRules.TNT_EXPLODES)) {
+                this.level().explode(this, Explosion.getDefaultDamageSource(this.level(), this), this.teleported ? TELEPORTED_EXPLOSION_BEHAVIOR : null, this.getX(), this.getY((double)0.0625F), this.getZ(), this.explosionPower, true, Level.ExplosionInteraction.TNT);
             }
         }
 
     }
 
     @Override
-    protected void writeCustomData(WriteView nbt) {
-        super.writeCustomData(nbt);
+    protected void addAdditionalSaveData(ValueOutput nbt) {
+        super.addAdditionalSaveData(nbt);
         nbt.putShort("fuse", (short)this.getFuse());
-        nbt.put("block_state", BlockState.CODEC, this.getBlockState());
+        nbt.store("block_state", BlockState.CODEC, this.getBlockState());
         if (this.explosionPower != 200.0F) {
             nbt.putFloat("explosion_power", this.explosionPower);
         }
     }
 
     @Override
-    protected void readCustomData(ReadView nbt) {
-        super.readCustomData(nbt);
-        RegistryOps<NbtElement> registryOps = this.getRegistryManager().getOps(NbtOps.INSTANCE);
-        this.setFuse(nbt.getShort("fuse", (short)80));
+    protected void readAdditionalSaveData(ValueInput nbt) {
+        super.readAdditionalSaveData(nbt);
+        RegistryOps<Tag> registryOps = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+        this.setFuse(nbt.getShortOr("fuse", (short)80));
         this.setBlockState((BlockState)nbt.read("block_state", BlockState.CODEC).orElse(DEFAULT_BLOCK_STATE));
-        this.explosionPower = MathHelper.clamp(nbt.getFloat("explosion_power", 200.0F), 0.0F, 128.0F);
+        this.explosionPower = Mth.clamp(nbt.getFloatOr("explosion_power", 200.0F), 0.0F, 128.0F);
     }
 
     @Nullable
@@ -153,8 +158,8 @@ public class NuclearTntEntity extends TntEntity {
     }
 
     @Override
-    public void copyFrom(Entity original) {
-        super.copyFrom(original);
+    public void restoreFrom(Entity original) {
+        super.restoreFrom(original);
         if (original instanceof NuclearTntEntity tntEntity) {
             this.causingEntity = tntEntity.causingEntity;
         }
@@ -163,22 +168,22 @@ public class NuclearTntEntity extends TntEntity {
 
     @Override
     public void setFuse(int fuse) {
-        this.dataTracker.set(FUSE, fuse);
+        this.entityData.set(FUSE, fuse);
     }
 
     @Override
     public int getFuse() {
-        return (Integer)this.dataTracker.get(FUSE);
+        return (Integer)this.entityData.get(FUSE);
     }
 
     @Override
     public void setBlockState(BlockState state) {
-        this.dataTracker.set(BLOCK_STATE, state);
+        this.entityData.set(BLOCK_STATE, state);
     }
 
     @Override
     public BlockState getBlockState() {
-        return (BlockState)this.dataTracker.get(BLOCK_STATE);
+        return (BlockState)this.entityData.get(BLOCK_STATE);
     }
 
     private void setTeleported(boolean teleported) {
@@ -186,8 +191,8 @@ public class NuclearTntEntity extends TntEntity {
     }
 
     @Nullable
-    public Entity teleportTo(TeleportTarget teleportTarget) {
-        Entity entity = super.teleportTo(teleportTarget);
+    public Entity teleport(TeleportTransition teleportTarget) {
+        Entity entity = super.teleport(teleportTarget);
         if (entity instanceof NuclearTntEntity tntEntity) {
             tntEntity.setTeleported(true);
         }
@@ -196,16 +201,16 @@ public class NuclearTntEntity extends TntEntity {
     }
 
     static {
-        FUSE = DataTracker.registerData(NuclearTntEntity.class, TrackedDataHandlerRegistry.INTEGER);
-        BLOCK_STATE = DataTracker.registerData(NuclearTntEntity.class, TrackedDataHandlerRegistry.BLOCK_STATE);
-        DEFAULT_BLOCK_STATE = BlazinBlazeTwitchModBlocks.NUCLEAR_TNT.getDefaultState();
+        FUSE = SynchedEntityData.defineId(NuclearTntEntity.class, EntityDataSerializers.INT);
+        BLOCK_STATE = SynchedEntityData.defineId(NuclearTntEntity.class, EntityDataSerializers.BLOCK_STATE);
+        DEFAULT_BLOCK_STATE = BlazinBlazeTwitchModBlocks.NUCLEAR_TNT.defaultBlockState();
         TELEPORTED_EXPLOSION_BEHAVIOR = new NuclearExplosionBehavior() {
-            public boolean canDestroyBlock(Explosion explosion, BlockView world, BlockPos pos, BlockState state, float power) {
-                return state.isOf(Blocks.NETHER_PORTAL) ? false : super.canDestroyBlock(explosion, world, pos, state, power);
+            public boolean shouldBlockExplode(Explosion explosion, BlockGetter world, BlockPos pos, BlockState state, float power) {
+                return state.is(Blocks.NETHER_PORTAL) ? false : super.shouldBlockExplode(explosion, world, pos, state, power);
             }
 
-            public Optional<Float> getBlastResistance(Explosion explosion, BlockView world, BlockPos pos, BlockState blockState, FluidState fluidState) {
-                return blockState.isOf(Blocks.NETHER_PORTAL) ? Optional.empty() : super.getBlastResistance(explosion, world, pos, blockState, fluidState);
+            public Optional<Float> getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState) {
+                return blockState.is(Blocks.NETHER_PORTAL) ? Optional.empty() : super.getBlockExplosionResistance(explosion, world, pos, blockState, fluidState);
             }
         };
     }

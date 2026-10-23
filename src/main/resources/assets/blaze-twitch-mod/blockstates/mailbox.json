@@ -1,33 +1,63 @@
 {
   "variants": {
-    "facing=east,open=false": {
-      "model": "blaze-twitch-mod:block/mailbox",
+    "facing=east,open=false,active=false": {
+      "model": "blaze-twitch-mod:block/mailbox_inactive",
       "y": 90
     },
-    "facing=north,open=false": {
-      "model": "blaze-twitch-mod:block/mailbox"
+    "facing=north,open=false,active=false": {
+      "model": "blaze-twitch-mod:block/mailbox_inactive"
     },
-    "facing=south,open=false": {
-      "model": "blaze-twitch-mod:block/mailbox",
+    "facing=south,open=false,active=false": {
+      "model": "blaze-twitch-mod:block/mailbox_inactive",
       "y": 180
     },
-    "facing=west,open=false": {
-      "model": "blaze-twitch-mod:block/mailbox",
+    "facing=west,open=false,active=false": {
+      "model": "blaze-twitch-mod:block/mailbox_inactive",
       "y": 270
     },
-    "facing=east,open=true": {
-      "model": "blaze-twitch-mod:block/mailbox_open",
+    "facing=east,open=true,active=false": {
+      "model": "blaze-twitch-mod:block/mailbox_inactive_open",
       "y": 90
     },
-    "facing=north,open=true": {
-      "model": "blaze-twitch-mod:block/mailbox_open"
+    "facing=north,open=true,active=false": {
+      "model": "blaze-twitch-mod:block/mailbox_inactive_open"
     },
-    "facing=south,open=true": {
-      "model": "blaze-twitch-mod:block/mailbox_open",
+    "facing=south,open=true,active=false": {
+      "model": "blaze-twitch-mod:block/mailbox_inactive_open",
       "y": 180
     },
-    "facing=west,open=true": {
-      "model": "blaze-twitch-mod:block/mailbox_open",
+    "facing=west,open=true,active=false": {
+      "model": "blaze-twitch-mod:block/mailbox_inactive_open",
+      "y": 270
+    },
+    "facing=east,open=false,active=true": {
+      "model": "blaze-twitch-mod:block/mailbox_active",
+      "y": 90
+    },
+    "facing=north,open=false,active=true": {
+      "model": "blaze-twitch-mod:block/mailbox_active"
+    },
+    "facing=south,open=false,active=true": {
+      "model": "blaze-twitch-mod:block/mailbox_active",
+      "y": 180
+    },
+    "facing=west,open=false,active=true": {
+      "model": "blaze-twitch-mod:block/mailbox_active",
+      "y": 270
+    },
+    "facing=east,open=true,active=true": {
+      "model": "blaze-twitch-mod:block/mailbox_active_open",
+      "y": 90
+    },
+    "facing=north,open=true,active=true": {
+      "model": "blaze-twitch-mod:block/mailbox_active_open"
+    },
+    "facing=south,open=true,active=true": {
+      "model": "blaze-twitch-mod:block/mailbox_active_open",
+      "y": 180
+    },
+    "facing=west,open=true,active=true": {
+      "model": "blaze-twitch-mod:block/mailbox_active_open",
       "y": 270
     }
   }

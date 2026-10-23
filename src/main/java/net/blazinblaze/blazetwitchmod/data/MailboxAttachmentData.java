@@ -3,9 +3,9 @@ package net.blazinblaze.blazetwitchmod.data;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.core.BlockPos;
 
 public record MailboxAttachmentData(BlockPos blockPos) {
 
@@ -13,7 +13,7 @@ public record MailboxAttachmentData(BlockPos blockPos) {
             BlockPos.CODEC.fieldOf("blockpos").forGetter(MailboxAttachmentData::blockPos)
     ).apply(instance, MailboxAttachmentData::new));
 
-    public static PacketCodec<ByteBuf, MailboxAttachmentData> PACKET_CODEC = PacketCodecs.codec(CODEC);
+    public static StreamCodec<ByteBuf, MailboxAttachmentData> PACKET_CODEC = ByteBufCodecs.fromCodec(CODEC);
 
     public static MailboxAttachmentData DEFAULT = new MailboxAttachmentData(new BlockPos(0,0,0));
 

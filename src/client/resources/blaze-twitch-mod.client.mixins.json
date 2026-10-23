@@ -1,10 +1,11 @@
 {
 	"required": true,
 	"package": "net.blazinblaze.blazetwitchmod.mixin.client",
-	"compatibilityLevel": "JAVA_21",
+	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"ExampleClientMixin",
-		"NarrateTTSMixin"
+		"NarrateTTSMixin",
+		"TutorialToastIconsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

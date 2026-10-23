@@ -3,8 +3,8 @@ package net.blazinblaze.blazetwitchmod.data;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.codec.ByteBufCodecs;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ public record LootCrateAttachmentData(Integer integer) {
             Codec.INT.fieldOf("integer").forGetter(LootCrateAttachmentData::integer)
     ).apply(instance, LootCrateAttachmentData::new));
 
-    public static PacketCodec<ByteBuf, LootCrateAttachmentData> PACKET_CODEC = PacketCodecs.codec(CODEC);
+    public static StreamCodec<ByteBuf, LootCrateAttachmentData> PACKET_CODEC = ByteBufCodecs.fromCodec(CODEC);
 
     public static LootCrateAttachmentData DEFAULT = new LootCrateAttachmentData(0);
 

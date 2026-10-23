@@ -1,0 +1,7 @@
+{
+  "parent": "blaze-twitch-mod:block/mailbox_active",
+  "textures": {
+    "0": "blaze-twitch-mod:block/mailbox_open",
+    "particle": "blaze-twitch-mod:block/mailbox_open"
+  }
+}

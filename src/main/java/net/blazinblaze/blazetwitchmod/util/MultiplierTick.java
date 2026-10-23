@@ -7,11 +7,11 @@ import net.blazinblaze.blazetwitchmod.data.TimerAttachmentData;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.network.chat.Component;
 import org.apache.commons.lang.mutable.MutableInt;
 
 public class MultiplierTick implements ServerTickEvents.EndTick {
@@ -23,9 +23,9 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
         if(MultiplierTimer.getTimer() == 20*600) {
             MultiplierTimer.incrementMultipler();
             MultiplierTimer.resetTimer();
-            for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                serverPlayer.playSoundToPlayer(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.NEUTRAL, 1.0F, 1.0F);
-                serverPlayer.sendMessage(Text.literal(String.format("§5§l[BTM]§r §a§lMultiplier just INCREASED to x%s!", MultiplierTimer.getMultiplier())));
+            for (ServerPlayer serverPlayer : PlayerLookup.all(server)) {
+                serverPlayer.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0F, 1.0F);
+                serverPlayer.sendSystemMessage(Component.literal(String.format("§5§l[BTM]§r §a§lMultiplier just INCREASED to x%s!", MultiplierTimer.getMultiplier())));
             }
         }else {
             MultiplierTimer.incrementTimer();
@@ -49,7 +49,7 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
             timer.increment();
             MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
             if(server != null) {
-                ServerWorld overworld = server.getOverworld();
+                ServerLevel overworld = server.overworld();
                 TimerAttachmentData data = overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, () -> TimerAttachmentData.DEFAULT);
                 overworld.setAttached(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, data.addInt(1));
             }
@@ -66,7 +66,7 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
             BlazinBlazeTwitchMod.LOGGER.info(String.valueOf(timer.intValue()));
             MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
             if(server != null) {
-                ServerWorld overworld = server.getOverworld();
+                ServerLevel overworld = server.overworld();
                 TimerAttachmentData data = overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, () -> TimerAttachmentData.DEFAULT);
                 overworld.setAttached(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, data.addInt(remainingOver ? value : 20*value));
             }
@@ -76,7 +76,7 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
             timer.setValue(0);
             MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
             if(server != null) {
-                ServerWorld overworld = server.getOverworld();
+                ServerLevel overworld = server.overworld();
                 TimerAttachmentData data = overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, () -> TimerAttachmentData.DEFAULT);
                 overworld.setAttached(BlazinBlazeAttachmentTypes.TIMER_ATTACHMENT_TYPE, data.clear());
             }
@@ -90,7 +90,7 @@ public class MultiplierTick implements ServerTickEvents.EndTick {
             multiplier.increment();
             MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
             if(server != null) {
-                ServerWorld overworld = server.getOverworld();
+                ServerLevel overworld = server.overworld();
                 MultiplierAttachmentData data = overworld.getAttachedOrCreate(BlazinBlazeAttachmentTypes.MULTIPLIER_ATTACHMENT_TYPE, () -> MultiplierAttachmentData.DEFAULT);
                 overworld.setAttached(BlazinBlazeAttachmentTypes.MULTIPLIER_ATTACHMENT_TYPE, data.addInt(1));
             }

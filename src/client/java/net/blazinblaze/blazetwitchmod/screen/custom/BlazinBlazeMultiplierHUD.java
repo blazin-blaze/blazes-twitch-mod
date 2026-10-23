@@ -3,12 +3,12 @@ package net.blazinblaze.blazetwitchmod.screen.custom;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.blazinblaze.blazetwitchmod.util.MultiplierTick;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.RenderTickCounter;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
 import net.minecraft.util.Util;
 import org.apache.commons.lang.mutable.MutableInt;
 
@@ -29,7 +29,7 @@ public class BlazinBlazeMultiplierHUD implements HudElement {
     }
 
     @Override
-    public void render(DrawContext drawContext, RenderTickCounter renderTickCounter) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker) {
         int multipler = MultiplierTick.MultiplierTimer.getMultiplier();
         String text1 = String.format("§lCURRENT MULTIPLIER (x%s)", multipler);
         double remainingSeconds = 600 - Math.floor((double) MultiplierTick.MultiplierTimer.getTimer() / 20);
@@ -37,12 +37,12 @@ public class BlazinBlazeMultiplierHUD implements HudElement {
         int seconds = (int)(remainingSeconds % 60);
         String text2 = String.format("%s:%s", minutes < 10 ? "0" + minutes : minutes, seconds < 10 ? "0" + seconds : seconds);
 
-        TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
+        Font textRenderer = Minecraft.getInstance().font;
 
-        drawContext.getMatrices().pushMatrix();
-        drawContext.getMatrices().scale(2, 2);
-        drawContext.drawText(textRenderer, Text.literal(text1), 10, textRenderer.fontHeight, -11671472, true);
-        drawContext.drawText(textRenderer, Text.literal(text2), 10, 10 + textRenderer.fontHeight, -7083952, true);
-        drawContext.getMatrices().popMatrix();
+        graphics.pose().pushMatrix();
+        graphics.pose().scale(2, 2);
+        graphics.text(textRenderer, Component.literal(text1), 10, textRenderer.lineHeight, -11671472, true);
+        graphics.text(textRenderer, Component.literal(text2), 10, 10 + textRenderer.lineHeight, -7083952, true);
+        graphics.pose().popMatrix();
     }
 }

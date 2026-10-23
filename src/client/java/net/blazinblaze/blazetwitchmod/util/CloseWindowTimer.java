@@ -1,7 +1,7 @@
 package net.blazinblaze.blazetwitchmod.util;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 import java.util.ArrayList;
 
@@ -15,7 +15,7 @@ public class CloseWindowTimer implements ClientTickEvents.EndTick {
     }
 
     @Override
-    public void onEndTick(MinecraftClient client) {
+    public void onEndTick(Minecraft client) {
         for (var iter = ongoingTimers.listIterator(); iter.hasNext(); ) {
             long currentTimer = iter.next();
             if ((currentTimer - 1) <= 0L) {

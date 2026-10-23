@@ -1,37 +1,37 @@
 package net.blazinblaze.blazetwitchmod.entity.custom;
 
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.Ownable;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.data.TrackedData;
-import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.passive.SalmonEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.TraceableEntity;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.world.entity.animal.fish.Salmon;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-public class LifeLinkedFishEntity extends SalmonEntity {
+public class LifeLinkedFishEntity extends Salmon {
 
-    private static final TrackedData<String> OWNER_UUID = DataTracker.registerData(LifeLinkedFishEntity.class, TrackedDataHandlerRegistry.STRING);
+    private static final EntityDataAccessor<String> OWNER_UUID = SynchedEntityData.defineId(LifeLinkedFishEntity.class, EntityDataSerializers.STRING);
 
-    public LifeLinkedFishEntity(EntityType<? extends SalmonEntity> entityType, World world) {
+    public LifeLinkedFishEntity(EntityType<? extends Salmon> entityType, Level world) {
         super(entityType, world);
     }
 
     @Override
-    public void onDeath(DamageSource damageSource) {
-        ServerPlayerEntity player = BlazinBlazeTwitchMod.serverRef.getPlayerManager().getPlayer(UUID.fromString(getOwnerUUID()));
-        if(player != null && !player.isDisconnected()) {
-            if(this.getWorld() instanceof ServerWorld world) {
+    public void die(DamageSource damageSource) {
+        ServerPlayer player = BlazinBlazeTwitchMod.serverRef.getPlayerList().getPlayer(UUID.fromString(getOwnerUUID()));
+        if(player != null && !player.hasDisconnected()) {
+            if(this.level() instanceof ServerLevel world) {
                 if(!player.isCreative()) {
                     player.kill(world);
                 }
@@ -40,28 +40,28 @@ public class LifeLinkedFishEntity extends SalmonEntity {
     }
 
     @Override
-    protected void writeCustomData(WriteView view) {
-        super.writeCustomData(view);
+    protected void addAdditionalSaveData(ValueOutput view) {
+        super.addAdditionalSaveData(view);
         view.putString("ownerUUID", getOwnerUUID());
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        super.initDataTracker(builder);
-        builder.add(OWNER_UUID, "");
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(OWNER_UUID, "");
     }
 
     @Override
-    protected void readCustomData(ReadView view) {
-        super.readCustomData(view);
-        setOwnerUUID(view.getString("ownerUUID", ""));
+    protected void readAdditionalSaveData(ValueInput view) {
+        super.readAdditionalSaveData(view);
+        setOwnerUUID(view.getStringOr("ownerUUID", ""));
     }
 
     public String getOwnerUUID() {
-        return this.dataTracker.get(OWNER_UUID);
+        return this.entityData.get(OWNER_UUID);
     }
 
     public void setOwnerUUID(String uuid) {
-        this.dataTracker.set(OWNER_UUID, uuid);
+        this.entityData.set(OWNER_UUID, uuid);
     }
 }

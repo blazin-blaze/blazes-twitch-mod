@@ -8,10 +8,10 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.impl.client.rendering.hud.HudLayer;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.Identifier;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -272,7 +272,7 @@ public class EmoteTextures {
         String urlString = String.format("https://cdn.betterttv.net/emote/%s/1x.%s", id, imageType);
         BlazinBlazeTwitchMod.LOGGER.info("Downloading emote from URL: {}", urlString);
 
-        File dir = new File(MinecraftClient.getInstance().runDirectory, "btmEmoteCache");
+        File dir = new File(Minecraft.getInstance().gameDirectory, "btmEmoteCache");
         if (!dir.exists()) dir.mkdirs();
 
         File file = new File(dir, String.format("%s.%s", id, imageType));
@@ -286,13 +286,13 @@ public class EmoteTextures {
     }
 
     private static void uploadTextureToMinecraft(String id, NativeImage image) {
-        MinecraftClient.getInstance().execute(() -> {
+        Minecraft.getInstance().execute(() -> {
             try {
                 String uniqueId = id + "-" + emoteIdCounter.getAndIncrement();
-                NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> uniqueId, image);
-                Identifier textureId = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, uniqueId);
+                DynamicTexture texture = new DynamicTexture(() -> uniqueId, image);
+                Identifier textureId = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, uniqueId);
 
-                MinecraftClient.getInstance().getTextureManager().registerTexture(textureId, texture);
+                Minecraft.getInstance().getTextureManager().register(textureId, texture);
                 texture.upload();
 
                 BlazeImage blazeImage = new BlazeImage(texture, id);
@@ -305,7 +305,7 @@ public class EmoteTextures {
     }
 
     private static void uploadAnimatedTextureToMinecraft(String id, File[] images) {
-        MinecraftClient.getInstance().execute(() -> {
+        Minecraft.getInstance().execute(() -> {
             try {
                 String uniqueId = id + "-" + emoteIdCounter.getAndIncrement();
 
@@ -314,10 +314,10 @@ public class EmoteTextures {
                 try (InputStream fileInputStream = new FileInputStream(firstFile)) {
                     NativeImage image = NativeImage.read(fileInputStream);
 
-                    NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> uniqueId, image);
-                    Identifier textureId = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, uniqueId);
+                    DynamicTexture texture = new DynamicTexture(() -> uniqueId, image);
+                    Identifier textureId = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, uniqueId);
 
-                    MinecraftClient.getInstance().getTextureManager().registerTexture(textureId, texture);
+                    Minecraft.getInstance().getTextureManager().register(textureId, texture);
                     texture.upload();
 
                     BlazeGif blazeGif = new BlazeGif(texture, id, images);

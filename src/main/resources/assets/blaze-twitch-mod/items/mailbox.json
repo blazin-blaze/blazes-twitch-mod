@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "blaze-twitch-mod:block/mailbox"
+    "model": "blaze-twitch-mod:block/mailbox_active"
   }
 }

@@ -1,10 +1,10 @@
 package net.blazinblaze.blazetwitchmod.sound;
 
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.Registry;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.resources.Identifier;
 
 public class BlazinBlazeTwitchModSounds {
     private BlazinBlazeTwitchModSounds() {
@@ -21,8 +21,8 @@ public class BlazinBlazeTwitchModSounds {
 
     // actual registration of all the custom SoundEvents
     private static SoundEvent registerSound(String id) {
-        Identifier identifier = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, id);
-        return Registry.register(Registries.SOUND_EVENT, identifier, SoundEvent.of(identifier));
+        Identifier identifier = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, id);
+        return Registry.register(BuiltInRegistries.SOUND_EVENT, identifier, SoundEvent.createVariableRangeEvent(identifier));
     }
 
     // This static method starts class initialization, which then initializes

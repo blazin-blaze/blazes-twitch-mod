@@ -1,12 +1,12 @@
 {
 	"required": true,
 	"package": "net.blazinblaze.blazetwitchmod.mixin",
-	"compatibilityLevel": "JAVA_21",
+	"compatibilityLevel": "JAVA_25",
 	"mixins": [
 		"ExampleMixin",
-		"CatEntityAccess",
-		"WolfEntityAccess",
-		"ParrotEntityAccess"
+		"CatAccess",
+		"WolfAccess",
+		"ParrotAccess"
 	],
 	"injectors": {
 		"defaultRequire": 1

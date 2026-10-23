@@ -1,21 +1,21 @@
 package net.blazinblaze.blazetwitchmod.util;
 
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
+import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 
 import java.util.List;
 
 public class BlazeImage {
 
-    private final NativeImageBackedTexture texture;
+    private final DynamicTexture texture;
     private final String id;
 
-    public BlazeImage(NativeImageBackedTexture texture, String id) {
+    public BlazeImage(DynamicTexture texture, String id) {
         this.texture = texture;
         this.id = id;
     }
 
-    public NativeImageBackedTexture getTexture() {
+    public DynamicTexture getTexture() {
         return this.texture;
     }
 

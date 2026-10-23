@@ -1,12 +1,12 @@
 package net.blazinblaze.blazetwitchmod.mixin;
 
 import net.minecraft.entity.passive.CatEntity;
-import net.minecraft.entity.passive.ParrotEntity;
+import net.minecraft.entity.passive.WolfEntity;
 import net.minecraft.util.DyeColor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(ParrotEntity.class)
-public interface ParrotEntityAccess {
-    @Invoker void callSetVariant(ParrotEntity.Variant variant);
+@Mixin(CatEntity.class)
+public interface CatEntityAccess {
+    @Invoker void callSetCollarColor(DyeColor color);
 }

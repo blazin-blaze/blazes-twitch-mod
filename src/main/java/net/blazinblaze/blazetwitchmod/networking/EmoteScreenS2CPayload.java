@@ -1,21 +1,22 @@
 package net.blazinblaze.blazetwitchmod.networking;
 
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload.Type;
+import net.minecraft.resources.Identifier;
 
-public record EmoteScreenS2CPayload(String emoteID, String imageType) implements CustomPayload {
-    public static final Identifier EMOTE_SCREEN_PAYLOAD_ID = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "emote_screen_payload_id");
-    public static final CustomPayload.Id<EmoteScreenS2CPayload> ID = new CustomPayload.Id<>(EMOTE_SCREEN_PAYLOAD_ID);
-    public static final PacketCodec<RegistryByteBuf, EmoteScreenS2CPayload> CODEC = PacketCodec.tuple(PacketCodecs.STRING, EmoteScreenS2CPayload::emoteID,
-            PacketCodecs.STRING, EmoteScreenS2CPayload::imageType,
+public record EmoteScreenS2CPayload(String emoteID, String imageType) implements CustomPacketPayload {
+    public static final Identifier EMOTE_SCREEN_PAYLOAD_ID = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "emote_screen_payload_id");
+    public static final CustomPacketPayload.Type<EmoteScreenS2CPayload> ID = new CustomPacketPayload.Type<>(EMOTE_SCREEN_PAYLOAD_ID);
+    public static final StreamCodec<RegistryFriendlyByteBuf, EmoteScreenS2CPayload> CODEC = StreamCodec.composite(ByteBufCodecs.STRING_UTF8, EmoteScreenS2CPayload::emoteID,
+            ByteBufCodecs.STRING_UTF8, EmoteScreenS2CPayload::imageType,
             EmoteScreenS2CPayload::new);
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

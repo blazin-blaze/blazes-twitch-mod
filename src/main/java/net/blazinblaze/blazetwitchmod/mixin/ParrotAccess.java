@@ -1,0 +1,12 @@
+package net.blazinblaze.blazetwitchmod.mixin;
+
+import net.minecraft.world.entity.animal.feline.Cat;
+import net.minecraft.world.entity.animal.parrot.Parrot;
+import net.minecraft.world.item.DyeColor;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Invoker;
+
+@Mixin(Parrot.class)
+public interface ParrotAccess {
+    @Invoker void callSetVariant(Parrot.Variant variant);
+}

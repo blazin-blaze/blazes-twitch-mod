@@ -1,44 +1,44 @@
 package net.blazinblaze.blazetwitchmod.entity.renderer;
 
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
-import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.MobEntityRenderer;
-import net.minecraft.client.render.entity.model.EntityModelLayers;
-import net.minecraft.client.render.entity.model.ParrotEntityModel;
-import net.minecraft.client.render.entity.state.ParrotEntityRenderState;
-import net.minecraft.entity.passive.ParrotEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.client.model.geom.ModelLayers;
+import net.minecraft.client.model.animal.parrot.ParrotModel;
+import net.minecraft.client.renderer.entity.state.ParrotRenderState;
+import net.minecraft.world.entity.animal.parrot.Parrot;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 
-public class LifeLinkedParrotRenderer extends MobEntityRenderer<ParrotEntity, ParrotEntityRenderState, ParrotEntityModel>  {
-    private static final Identifier RED_BLUE_TEXTURE = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
-    private static final Identifier BLUE_TEXTURE = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
-    private static final Identifier GREEN_TEXTURE = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
-    private static final Identifier YELLOW_TEXTURE = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
-    private static final Identifier GREY_TEXTURE = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
+public class LifeLinkedParrotRenderer extends MobRenderer<Parrot, ParrotRenderState, ParrotModel>  {
+    private static final Identifier RED_BLUE_TEXTURE = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
+    private static final Identifier BLUE_TEXTURE = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
+    private static final Identifier GREEN_TEXTURE = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
+    private static final Identifier YELLOW_TEXTURE = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
+    private static final Identifier GREY_TEXTURE = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/life_linked_parrot/life_linked_parrot.png");
 
-    public LifeLinkedParrotRenderer(EntityRendererFactory.Context context) {
-        super(context, new ParrotEntityModel(context.getPart(EntityModelLayers.PARROT)), 0.3F);
+    public LifeLinkedParrotRenderer(EntityRendererProvider.Context context) {
+        super(context, new ParrotModel(context.bakeLayer(ModelLayers.PARROT)), 0.3F);
     }
 
-    public Identifier getTexture(ParrotEntityRenderState parrotEntityRenderState) {
+    public Identifier getTextureLocation(ParrotRenderState parrotEntityRenderState) {
         return getTexture(parrotEntityRenderState.variant);
     }
 
-    public ParrotEntityRenderState createRenderState() {
-        return new ParrotEntityRenderState();
+    public ParrotRenderState createRenderState() {
+        return new ParrotRenderState();
     }
 
-    public void updateRenderState(ParrotEntity parrotEntity, ParrotEntityRenderState parrotEntityRenderState, float f) {
-        super.updateRenderState(parrotEntity, parrotEntityRenderState, f);
+    public void extractRenderState(Parrot parrotEntity, ParrotRenderState parrotEntityRenderState, float f) {
+        super.extractRenderState(parrotEntity, parrotEntityRenderState, f);
         parrotEntityRenderState.variant = parrotEntity.getVariant();
-        float g = MathHelper.lerp(f, parrotEntity.lastFlapProgress, parrotEntity.flapProgress);
-        float h = MathHelper.lerp(f, parrotEntity.lastMaxWingDeviation, parrotEntity.maxWingDeviation);
-        parrotEntityRenderState.flapAngle = (MathHelper.sin(g) + 1.0F) * h;
-        parrotEntityRenderState.parrotPose = ParrotEntityModel.getPose(parrotEntity);
+        float g = Mth.lerp(f, parrotEntity.oFlap, parrotEntity.flap);
+        float h = Mth.lerp(f, parrotEntity.oFlapSpeed, parrotEntity.flapSpeed);
+        parrotEntityRenderState.flapAngle = (Mth.sin(g) + 1.0F) * h;
+        parrotEntityRenderState.pose = ParrotModel.getPose(parrotEntity);
     }
 
-    public static Identifier getTexture(ParrotEntity.Variant variant) {
+    public static Identifier getTexture(Parrot.Variant variant) {
         Identifier var10000;
         switch (variant) {
             case RED_BLUE -> var10000 = RED_BLUE_TEXTURE;

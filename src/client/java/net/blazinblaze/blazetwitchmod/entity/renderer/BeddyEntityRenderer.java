@@ -5,15 +5,15 @@ import net.blazinblaze.blazetwitchmod.entity.custom.BeddyEntity;
 import net.blazinblaze.blazetwitchmod.entity.model.BeddyEntityModel;
 import net.blazinblaze.blazetwitchmod.entity.model.BlazinBlazeModelLayers;
 import net.blazinblaze.blazetwitchmod.entity.state.BeddyRenderState;
-import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.MobEntityRenderer;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.renderer.entity.EntityRendererProvider;
+import net.minecraft.client.renderer.entity.MobRenderer;
+import net.minecraft.resources.Identifier;
 
-public class BeddyEntityRenderer extends MobEntityRenderer<BeddyEntity, BeddyRenderState, BeddyEntityModel> {
-    private static final Identifier TEXTURE = Identifier.of(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/beddy_entity/beddy_entity.png");
+public class BeddyEntityRenderer extends MobRenderer<BeddyEntity, BeddyRenderState, BeddyEntityModel> {
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(BlazinBlazeTwitchMod.MOD_ID, "textures/entity/beddy_entity/beddy_entity.png");
 
-    public BeddyEntityRenderer(EntityRendererFactory.Context context) {
-        super(context, new BeddyEntityModel(context.getPart(BlazinBlazeModelLayers.BEDDY)), 0.375f); // 0.375 shaowd radius
+    public BeddyEntityRenderer(EntityRendererProvider.Context context) {
+        super(context, new BeddyEntityModel(context.bakeLayer(BlazinBlazeModelLayers.BEDDY)), 0.375f); // 0.375 shaowd radius
     }
 
     @Override
@@ -22,13 +22,13 @@ public class BeddyEntityRenderer extends MobEntityRenderer<BeddyEntity, BeddyRen
     }
 
     @Override
-    public void updateRenderState(BeddyEntity entity, BeddyRenderState state, float tickProgress) {
-        super.updateRenderState(entity, state, tickProgress);
+    public void extractRenderState(BeddyEntity entity, BeddyRenderState state, float tickProgress) {
+        super.extractRenderState(entity, state, tickProgress);
         state.idleAnimationState.copyFrom(entity.idleAnimationState);
     }
 
     @Override
-    public Identifier getTexture(BeddyRenderState state) {
+    public Identifier getTextureLocation(BeddyRenderState state) {
         return TEXTURE;
     }
 }

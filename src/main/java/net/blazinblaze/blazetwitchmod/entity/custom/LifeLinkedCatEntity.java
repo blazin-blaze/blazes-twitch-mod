@@ -1,24 +1,24 @@
 package net.blazinblaze.blazetwitchmod.entity.custom;
 
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.passive.CatEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.animal.feline.Cat;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 
-public class LifeLinkedCatEntity extends CatEntity {
-    public LifeLinkedCatEntity(EntityType<? extends CatEntity> entityType, World world) {
+public class LifeLinkedCatEntity extends Cat {
+    public LifeLinkedCatEntity(EntityType<? extends Cat> entityType, Level world) {
         super(entityType, world);
     }
 
     @Override
-    public void onDeath(DamageSource damageSource) {
-        super.onDeath(damageSource);
+    public void die(DamageSource damageSource) {
+        super.die(damageSource);
 
         if(this.getOwner() != null) {
-            if(this.getOwner() instanceof PlayerEntity player) {
-                if(this.getWorld() instanceof ServerWorld world) {
+            if(this.getOwner() instanceof Player player) {
+                if(this.level() instanceof ServerLevel world) {
                     if(!player.isCreative()) {
                         player.kill(world);
                     }

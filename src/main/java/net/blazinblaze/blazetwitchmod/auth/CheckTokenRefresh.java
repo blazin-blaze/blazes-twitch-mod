@@ -4,7 +4,7 @@ import com.github.philippheuer.credentialmanager.domain.OAuth2Credential;
 import com.github.twitch4j.auth.providers.TwitchIdentityProvider;
 import net.blazinblaze.blazetwitchmod.BlazinBlazeTwitchMod;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.util.Optional;
 
@@ -22,18 +22,18 @@ public class CheckTokenRefresh implements Runnable {
         MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
         if(server != null) {
-            server.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r §eThe Twitch Access Token is close to expiring. Attempting to update token to prevent future errors."), false);
+            server.getPlayerList().broadcastSystemMessage(Component.nullToEmpty("§5§l[BTM]§r §eThe Twitch Access Token is close to expiring. Attempting to update token to prevent future errors."), false);
         }
 
         if(!hasUpdated) {
             if(server != null) {
-                server.getPlayerManager().broadcast(Text.empty(), (player) -> {
+                server.getPlayerList().broadcastSystemMessage(Component.empty(), (player) -> {
                     if(!server.isSingleplayer()) {
-                        if(!server.getPlayerManager().isOperator(player.getGameProfile()) && !server.isHost(player.getGameProfile())) {
-                            return Text.of("§5§l[BTM]§r §cToken expiry check failed. The server owner/host must re-authenticate to avoid future errors.");
+                        if(!server.getPlayerList().isOp(player.nameAndId()) && !server.isSingleplayerOwner(player.nameAndId())) {
+                            return Component.nullToEmpty("§5§l[BTM]§r §cToken expiry check failed. The server owner/host must re-authenticate to avoid future errors.");
                         }
                     }
-                    return Text.of("§5§l[BTM]§r §cToken expiry check failed. You must re-authenticate to avoid future errors.");
+                    return Component.nullToEmpty("§5§l[BTM]§r §cToken expiry check failed. You must re-authenticate to avoid future errors.");
                 }, false);
             }
             BlazinBlazeTwitchMod.closeTwitchClient();
@@ -47,7 +47,7 @@ public class CheckTokenRefresh implements Runnable {
         Optional<OAuth2Credential> additionalCredentialInformation = identityProvider.getAdditionalCredentialInformation(credential);
         MinecraftServer server = BlazinBlazeTwitchMod.serverRef;
 
-        server.getPlayerManager().broadcast(Text.of("§5§l[BTM]§r §eToken refresh check."), false);
+        server.getPlayerList().broadcastSystemMessage(Component.nullToEmpty("§5§l[BTM]§r §eToken refresh check."), false);
         if(additionalCredentialInformation.isPresent()) {
             OAuth2Credential cred = additionalCredentialInformation.get();
             int expiresIn = cred.getExpiresIn();

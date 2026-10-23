@@ -5,15 +5,15 @@ import net.blazinblaze.blazetwitchmod.networking.OverlayMessageS2CPayload;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.Heightmap;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayList;
 
@@ -22,7 +22,7 @@ public class TeleportTimer implements ServerTickEvents.EndTick {
 
     private static final ArrayList<Location> locations = new ArrayList<Location>();
 
-    public void setLocation(ServerWorld world, int x, int z) {
+    public void setLocation(ServerLevel world, int x, int z) {
         locations.add(new Location(world, x, z));
     }
 
@@ -30,11 +30,11 @@ public class TeleportTimer implements ServerTickEvents.EndTick {
     public void onEndTick(MinecraftServer server) {
         for (var iter = locations.listIterator(); iter.hasNext(); ) {
             Location location = iter.next();
-            ServerWorld world = location.world;
-            if(world.isPosLoaded(new BlockPos(location.x, world.getTopY(Heightmap.Type.WORLD_SURFACE, location.x, location.z), location.z))) {
-                for (ServerPlayerEntity serverPlayer : PlayerLookup.all(server)) {
-                    var instance = new StatusEffectInstance(BlazinBlazeTwitchMod.RANDOM_TELEPORT, 8*20, 0, false, true, false);
-                    serverPlayer.addStatusEffect(instance);
+            ServerLevel world = location.world;
+            if(world.isLoaded(new BlockPos(location.x, world.getHeight(Heightmap.Types.WORLD_SURFACE, location.x, location.z), location.z))) {
+                for (ServerPlayer serverPlayer : PlayerLookup.all(server)) {
+                    var instance = new MobEffectInstance(BlazinBlazeTwitchMod.RANDOM_TELEPORT, 8*20, 0, false, true, false);
+                    serverPlayer.addEffect(instance);
                 }
                 iter.remove();
             }
@@ -44,5 +44,5 @@ public class TeleportTimer implements ServerTickEvents.EndTick {
         ServerTickEvents.END_SERVER_TICK.register(INSTANCE);
     }
 
-    record Location(ServerWorld world, int x, int z) {}
+    record Location(ServerLevel world, int x, int z) {}
 }

@@ -42,7 +42,6 @@ public class BlazinBlazeAuth { ;
                     }
                 }
         );
-        //BlazinBlazeTwitchMod.LOGGER.info("The user should now visit: {}", req.getCompleteUri());
         return List.of(req.getCompleteUri(), req.getDeviceCode());
     }
 

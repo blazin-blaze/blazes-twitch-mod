@@ -9,68 +9,69 @@ import net.blazinblaze.blazetwitchmod.item.BlazinBlazeTwitchModItems;
 import net.blazinblaze.blazetwitchmod.sound.BlazinBlazeTwitchModSounds;
 import net.fabricmc.fabric.api.attachment.v1.AttachmentType;
 import net.fabricmc.fabric.impl.item.EnchantmentUtil;
-import net.minecraft.command.argument.ParticleEffectArgumentType;
-import net.minecraft.component.EnchantmentEffectComponentTypes;
-import net.minecraft.component.type.EnchantableComponent;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.component.type.PotionContentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentEffectContext;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.enchantment.provider.EnchantmentProvider;
-import net.minecraft.enchantment.provider.EnchantmentProviders;
-import net.minecraft.entity.*;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.data.TrackedData;
-import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.mob.PiglinBrain;
-import net.minecraft.entity.passive.WolfVariant;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.entity.vehicle.VehicleInventory;
-import net.minecraft.inventory.LootableInventory;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.inventory.StackReference;
-import net.minecraft.item.*;
-import net.minecraft.loot.LootTable;
-import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.loot.context.LootContextTypes;
-import net.minecraft.loot.context.LootWorldContext;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.particle.ParticlesMode;
-import net.minecraft.potion.Potion;
-import net.minecraft.potion.Potions;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.screen.GenericContainerScreenHandler;
-import net.minecraft.screen.ScreenHandler;
+import net.minecraft.commands.arguments.ParticleArgument;
+import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.Entity.RemovalReason;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
+import net.minecraft.world.item.enchantment.Enchantable;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantedItemInUse;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.enchantment.providers.EnchantmentProvider;
+import net.minecraft.world.item.enchantment.providers.VanillaEnchantmentProviders;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.monster.piglin.PiglinAi;
+import net.minecraft.world.entity.animal.wolf.WolfVariant;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.vehicle.ContainerEntity;
+import net.minecraft.world.RandomizableContainer;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ParticleStatus;
+import net.minecraft.world.item.alchemy.Potion;
+import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.core.Holder;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.storage.ReadView;
-import net.minecraft.storage.WriteView;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.ItemScatterer;
-import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.World;
-import net.minecraft.world.event.GameEvent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.Containers;
+import net.minecraft.core.NonNullList;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.StringReader;
@@ -78,94 +79,94 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class LootCrateEntity extends Entity { //implements InventoryOwner
-    private static final TrackedData<Integer> DESTRUCTION_TIMER = DataTracker.registerData(LootCrateEntity.class, TrackedDataHandlerRegistry.INTEGER);
-    private static final TrackedData<Boolean> HAS_TOUCHED_GROUND = DataTracker.registerData(LootCrateEntity.class, TrackedDataHandlerRegistry.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DESTRUCTION_TIMER = SynchedEntityData.defineId(LootCrateEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> HAS_TOUCHED_GROUND = SynchedEntityData.defineId(LootCrateEntity.class, EntityDataSerializers.BOOLEAN);
     public final AnimationState idleAnimationState = new AnimationState();
     private int idleAnimationTimeout = 0;
 
     private static final Map<ItemStack, ItemRarity> LOOT_TABLE = Map.ofEntries(
-            Map.entry(Items.COAL_BLOCK.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.IRON_GOLEM_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.4, true, false, "none")),
-            Map.entry(Items.DIAMOND_SWORD.getDefaultStack(), new ItemRarity(0.1, false, true, "tool")),
-            Map.entry(Items.ALLAY_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.4, true, false, "none")),
-            Map.entry(Items.ANVIL.getDefaultStack(), new ItemRarity(0.4, false, false, "none")),
-            Map.entry(Items.BEACON.getDefaultStack(), new ItemRarity(0.1, false, false, "none")),
-            Map.entry(Items.DIAMOND_BLOCK.getDefaultStack(), new ItemRarity(0.1, true, false, "none")),
-            Map.entry(Items.NETHERITE_BLOCK.getDefaultStack(), new ItemRarity(0.05, false, false, "none")),
-            Map.entry(Items.GOLD_BLOCK.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.IRON_BLOCK.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.LAPIS_BLOCK.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.COPPER_BLOCK.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.ENCHANTED_GOLDEN_APPLE.getDefaultStack(), new ItemRarity(0.1, true, false, "none")),
-            Map.entry(Items.GOLDEN_APPLE.getDefaultStack(), new ItemRarity(0.2, true, false, "none")),
-            Map.entry(Items.SHULKER_BOX.getDefaultStack(), new ItemRarity(0.1, false, false, "none")),
-            Map.entry(Items.ELYTRA.getDefaultStack(), new ItemRarity(0.01, false, true, "armor")),
-            Map.entry(Items.BREAD.getDefaultStack(), new ItemRarity(0.6, true, false, "none")),
-            Map.entry(Items.COOKED_BEEF.getDefaultStack(), new ItemRarity(0.6, true, false, "none")),
-            Map.entry(Items.FIRE_CHARGE.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.FLINT_AND_STEEL.getDefaultStack(), new ItemRarity(0.5, false, false, "none")),
-            Map.entry(Items.OBSIDIAN.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.ENDER_CHEST.getDefaultStack(), new ItemRarity(0.4, false, false, "none")),
-            Map.entry(Items.ENDER_DRAGON_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.01, true, false, "none")),
-            Map.entry(Items.WITHER_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.01, true, false, "none")),
-            Map.entry(Items.ENDER_PEARL.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.ENCHANTED_BOOK.getDefaultStack(), new ItemRarity(0.3, false, false, "none")),
-            Map.entry(Items.WOLF_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.4, true, false, "none")),
-            Map.entry(Items.WOLF_ARMOR.getDefaultStack(), new ItemRarity(0.4, false, true, "armor")),
-            Map.entry(Items.CAT_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.4, true, false, "none")),
-            Map.entry(Items.VILLAGER_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.4, true, false, "none")),
-            Map.entry(Items.HORSE_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.4, true, false, "none")),
-            Map.entry(Items.DIAMOND_HORSE_ARMOR.getDefaultStack(), new ItemRarity(0.2, false, true, "armor")),
-            Map.entry(Items.GOLDEN_HORSE_ARMOR.getDefaultStack(), new ItemRarity(0.5, false, true, "armor")),
-            Map.entry(Items.SKELETON_HORSE_SPAWN_EGG.getDefaultStack(), new ItemRarity(0.3, true, false, "none")),
-            Map.entry(Items.TOTEM_OF_UNDYING.getDefaultStack(), new ItemRarity(0.4, false, false, "none")),
-            Map.entry(Items.END_CRYSTAL.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
-            Map.entry(Items.EMERALD_BLOCK.getDefaultStack(), new ItemRarity(0.3, true, false, "none")),
-            Map.entry(Items.DIAMOND_PICKAXE.getDefaultStack(), new ItemRarity(0.1, false, true, "tool")),
-            Map.entry(Items.DIAMOND_AXE.getDefaultStack(), new ItemRarity(0.1, false, true, "tool")),
-            Map.entry(Items.DIAMOND_SHOVEL.getDefaultStack(), new ItemRarity(0.1, false, true, "tool")),
-            Map.entry(Items.DIAMOND_HOE.getDefaultStack(), new ItemRarity(0.1, false, true, "tool")),
-            Map.entry(Items.IRON_SWORD.getDefaultStack(), new ItemRarity(0.3, false, true, "tool")),
-            Map.entry(Items.IRON_PICKAXE.getDefaultStack(), new ItemRarity(0.3, false, true, "tool")),
-            Map.entry(Items.IRON_AXE.getDefaultStack(), new ItemRarity(0.3, false, true, "tool")),
-            Map.entry(Items.IRON_SHOVEL.getDefaultStack(), new ItemRarity(0.3, false, true, "tool")),
-            Map.entry(Items.IRON_HOE.getDefaultStack(), new ItemRarity(0.3, false, true, "tool")),
-            Map.entry(Items.NETHERITE_AXE.getDefaultStack(), new ItemRarity(0.05, false, true, "tool")),
-            Map.entry(Items.NETHERITE_HOE.getDefaultStack(), new ItemRarity(0.05, false, true, "tool")),
-            Map.entry(Items.NETHERITE_SWORD.getDefaultStack(), new ItemRarity(0.05, false, true, "tool")),
-            Map.entry(Items.NETHERITE_PICKAXE.getDefaultStack(), new ItemRarity(0.05, false, true, "tool")),
-            Map.entry(Items.NETHERITE_SHOVEL.getDefaultStack(), new ItemRarity(0.05, false, true, "tool")),
-            Map.entry(Items.IRON_HELMET.getDefaultStack(), new ItemRarity(0.3, false, true, "armor")),
-            Map.entry(Items.IRON_CHESTPLATE.getDefaultStack(), new ItemRarity(0.3, false, true, "armor")),
-            Map.entry(Items.IRON_LEGGINGS.getDefaultStack(), new ItemRarity(0.3, false, true, "armor")),
-            Map.entry(Items.IRON_BOOTS.getDefaultStack(), new ItemRarity(0.3, false, true, "armor")),
-            Map.entry(Items.DIAMOND_HELMET.getDefaultStack(), new ItemRarity(0.1, false, true, "armor")),
-            Map.entry(Items.DIAMOND_CHESTPLATE.getDefaultStack(), new ItemRarity(0.1, false, true, "armor")),
-            Map.entry(Items.DIAMOND_LEGGINGS.getDefaultStack(), new ItemRarity(0.1, false, true, "armor")),
-            Map.entry(Items.DIAMOND_BOOTS.getDefaultStack(), new ItemRarity(0.1, false, true, "armor")),
-            Map.entry(Items.NETHERITE_HELMET.getDefaultStack(), new ItemRarity(0.05, false, true, "armor")),
-            Map.entry(Items.NETHERITE_CHESTPLATE.getDefaultStack(), new ItemRarity(0.05, false, true, "armor")),
-            Map.entry(Items.NETHERITE_LEGGINGS.getDefaultStack(), new ItemRarity(0.05, false, true, "armor")),
-            Map.entry(Items.NETHERITE_BOOTS.getDefaultStack(), new ItemRarity(0.05, false, true, "armor")),
-            Map.entry(Items.POTION.getDefaultStack(), new ItemRarity(0.5, false, false, "none")),
-            Map.entry(Items.TNT.getDefaultStack(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.COAL_BLOCK.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.IRON_GOLEM_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.4, true, false, "none")),
+            Map.entry(Items.DIAMOND_SWORD.getDefaultInstance(), new ItemRarity(0.1, false, true, "tool")),
+            Map.entry(Items.ALLAY_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.4, true, false, "none")),
+            Map.entry(Items.ANVIL.getDefaultInstance(), new ItemRarity(0.4, false, false, "none")),
+            Map.entry(Items.BEACON.getDefaultInstance(), new ItemRarity(0.1, false, false, "none")),
+            Map.entry(Items.DIAMOND_BLOCK.getDefaultInstance(), new ItemRarity(0.1, true, false, "none")),
+            Map.entry(Items.NETHERITE_BLOCK.getDefaultInstance(), new ItemRarity(0.05, false, false, "none")),
+            Map.entry(Items.GOLD_BLOCK.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.IRON_BLOCK.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.LAPIS_BLOCK.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.COPPER_BLOCK.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.ENCHANTED_GOLDEN_APPLE.getDefaultInstance(), new ItemRarity(0.1, true, false, "none")),
+            Map.entry(Items.GOLDEN_APPLE.getDefaultInstance(), new ItemRarity(0.2, true, false, "none")),
+            Map.entry(Items.SHULKER_BOX.getDefaultInstance(), new ItemRarity(0.1, false, false, "none")),
+            Map.entry(Items.ELYTRA.getDefaultInstance(), new ItemRarity(0.01, false, true, "armor")),
+            Map.entry(Items.BREAD.getDefaultInstance(), new ItemRarity(0.6, true, false, "none")),
+            Map.entry(Items.COOKED_BEEF.getDefaultInstance(), new ItemRarity(0.6, true, false, "none")),
+            Map.entry(Items.FIRE_CHARGE.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.FLINT_AND_STEEL.getDefaultInstance(), new ItemRarity(0.5, false, false, "none")),
+            Map.entry(Items.OBSIDIAN.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.ENDER_CHEST.getDefaultInstance(), new ItemRarity(0.4, false, false, "none")),
+            Map.entry(Items.ENDER_DRAGON_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.01, true, false, "none")),
+            Map.entry(Items.WITHER_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.01, true, false, "none")),
+            Map.entry(Items.ENDER_PEARL.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.ENCHANTED_BOOK.getDefaultInstance(), new ItemRarity(0.3, false, false, "none")),
+            Map.entry(Items.WOLF_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.4, true, false, "none")),
+            Map.entry(Items.WOLF_ARMOR.getDefaultInstance(), new ItemRarity(0.4, false, true, "armor")),
+            Map.entry(Items.CAT_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.4, true, false, "none")),
+            Map.entry(Items.VILLAGER_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.4, true, false, "none")),
+            Map.entry(Items.HORSE_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.4, true, false, "none")),
+            Map.entry(Items.DIAMOND_HORSE_ARMOR.getDefaultInstance(), new ItemRarity(0.2, false, true, "armor")),
+            Map.entry(Items.GOLDEN_HORSE_ARMOR.getDefaultInstance(), new ItemRarity(0.5, false, true, "armor")),
+            Map.entry(Items.SKELETON_HORSE_SPAWN_EGG.getDefaultInstance(), new ItemRarity(0.3, true, false, "none")),
+            Map.entry(Items.TOTEM_OF_UNDYING.getDefaultInstance(), new ItemRarity(0.4, false, false, "none")),
+            Map.entry(Items.END_CRYSTAL.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
+            Map.entry(Items.EMERALD_BLOCK.getDefaultInstance(), new ItemRarity(0.3, true, false, "none")),
+            Map.entry(Items.DIAMOND_PICKAXE.getDefaultInstance(), new ItemRarity(0.1, false, true, "tool")),
+            Map.entry(Items.DIAMOND_AXE.getDefaultInstance(), new ItemRarity(0.1, false, true, "tool")),
+            Map.entry(Items.DIAMOND_SHOVEL.getDefaultInstance(), new ItemRarity(0.1, false, true, "tool")),
+            Map.entry(Items.DIAMOND_HOE.getDefaultInstance(), new ItemRarity(0.1, false, true, "tool")),
+            Map.entry(Items.IRON_SWORD.getDefaultInstance(), new ItemRarity(0.3, false, true, "tool")),
+            Map.entry(Items.IRON_PICKAXE.getDefaultInstance(), new ItemRarity(0.3, false, true, "tool")),
+            Map.entry(Items.IRON_AXE.getDefaultInstance(), new ItemRarity(0.3, false, true, "tool")),
+            Map.entry(Items.IRON_SHOVEL.getDefaultInstance(), new ItemRarity(0.3, false, true, "tool")),
+            Map.entry(Items.IRON_HOE.getDefaultInstance(), new ItemRarity(0.3, false, true, "tool")),
+            Map.entry(Items.NETHERITE_AXE.getDefaultInstance(), new ItemRarity(0.05, false, true, "tool")),
+            Map.entry(Items.NETHERITE_HOE.getDefaultInstance(), new ItemRarity(0.05, false, true, "tool")),
+            Map.entry(Items.NETHERITE_SWORD.getDefaultInstance(), new ItemRarity(0.05, false, true, "tool")),
+            Map.entry(Items.NETHERITE_PICKAXE.getDefaultInstance(), new ItemRarity(0.05, false, true, "tool")),
+            Map.entry(Items.NETHERITE_SHOVEL.getDefaultInstance(), new ItemRarity(0.05, false, true, "tool")),
+            Map.entry(Items.IRON_HELMET.getDefaultInstance(), new ItemRarity(0.3, false, true, "armor")),
+            Map.entry(Items.IRON_CHESTPLATE.getDefaultInstance(), new ItemRarity(0.3, false, true, "armor")),
+            Map.entry(Items.IRON_LEGGINGS.getDefaultInstance(), new ItemRarity(0.3, false, true, "armor")),
+            Map.entry(Items.IRON_BOOTS.getDefaultInstance(), new ItemRarity(0.3, false, true, "armor")),
+            Map.entry(Items.DIAMOND_HELMET.getDefaultInstance(), new ItemRarity(0.1, false, true, "armor")),
+            Map.entry(Items.DIAMOND_CHESTPLATE.getDefaultInstance(), new ItemRarity(0.1, false, true, "armor")),
+            Map.entry(Items.DIAMOND_LEGGINGS.getDefaultInstance(), new ItemRarity(0.1, false, true, "armor")),
+            Map.entry(Items.DIAMOND_BOOTS.getDefaultInstance(), new ItemRarity(0.1, false, true, "armor")),
+            Map.entry(Items.NETHERITE_HELMET.getDefaultInstance(), new ItemRarity(0.05, false, true, "armor")),
+            Map.entry(Items.NETHERITE_CHESTPLATE.getDefaultInstance(), new ItemRarity(0.05, false, true, "armor")),
+            Map.entry(Items.NETHERITE_LEGGINGS.getDefaultInstance(), new ItemRarity(0.05, false, true, "armor")),
+            Map.entry(Items.NETHERITE_BOOTS.getDefaultInstance(), new ItemRarity(0.05, false, true, "armor")),
+            Map.entry(Items.POTION.getDefaultInstance(), new ItemRarity(0.5, false, false, "none")),
+            Map.entry(Items.TNT.getDefaultInstance(), new ItemRarity(0.5, true, false, "none")),
             //Map.entry(BlazinBlazeTwitchModItems.BLAZE_SWORD.getDefaultStack(), new ItemRarity(0.001, false, true, "tool")),
-            Map.entry(BlazinBlazeTwitchModBlocks.NUCLEAR_TNT.asItem().getDefaultStack(), new ItemRarity(0.1, true, false, "none")),
-            Map.entry(Items.BOW.getDefaultStack(), new ItemRarity(0.5, false, true, "bow")),
-            Map.entry(Items.CROSSBOW.getDefaultStack(), new ItemRarity(0.5, false, true, "crossbow")),
-            Map.entry(BlazinBlazeTwitchModItems.IMMUNITY_SHIELD_ITEM.getDefaultStack(), new ItemRarity(0.001, false, false, "none")),
-            Map.entry(BlazinBlazeTwitchModItems.FAKE_EYE_OF_ENDER.getDefaultStack(), new ItemRarity(0.1, true, false, "none")),
-            Map.entry(Items.ENDER_EYE.getDefaultStack(), new ItemRarity(0.1, true, false, "none")));
+            Map.entry(BlazinBlazeTwitchModBlocks.NUCLEAR_TNT.asItem().getDefaultInstance(), new ItemRarity(0.1, true, false, "none")),
+            Map.entry(Items.BOW.getDefaultInstance(), new ItemRarity(0.5, false, true, "bow")),
+            Map.entry(Items.CROSSBOW.getDefaultInstance(), new ItemRarity(0.5, false, true, "crossbow")),
+            Map.entry(BlazinBlazeTwitchModItems.IMMUNITY_SHIELD_ITEM.getDefaultInstance(), new ItemRarity(0.001, false, false, "none")),
+            Map.entry(BlazinBlazeTwitchModItems.FAKE_EYE_OF_ENDER.getDefaultInstance(), new ItemRarity(0.1, true, false, "none")),
+            Map.entry(Items.ENDER_EYE.getDefaultInstance(), new ItemRarity(0.1, true, false, "none")));
 
-    private static final ArrayList<RegistryKey<Enchantment>> toolEnchantments = new ArrayList<RegistryKey<Enchantment>>();
-    private static final ArrayList<RegistryKey<Enchantment>> bowEnchantments = new ArrayList<RegistryKey<Enchantment>>();
-    private static final ArrayList<RegistryKey<Enchantment>> crossbowEnchantments = new ArrayList<RegistryKey<Enchantment>>();
-    private static final ArrayList<RegistryKey<Enchantment>> armorEnchantments = new ArrayList<RegistryKey<Enchantment>>();
-    private static final ArrayList<RegistryEntry<Potion>> possiblePotions = new ArrayList<RegistryEntry<Potion>>();
+    private static final ArrayList<ResourceKey<Enchantment>> toolEnchantments = new ArrayList<ResourceKey<Enchantment>>();
+    private static final ArrayList<ResourceKey<Enchantment>> bowEnchantments = new ArrayList<ResourceKey<Enchantment>>();
+    private static final ArrayList<ResourceKey<Enchantment>> crossbowEnchantments = new ArrayList<ResourceKey<Enchantment>>();
+    private static final ArrayList<ResourceKey<Enchantment>> armorEnchantments = new ArrayList<ResourceKey<Enchantment>>();
+    private static final ArrayList<Holder<Potion>> possiblePotions = new ArrayList<Holder<Potion>>();
 
-    private Text label = Text.literal("§lLoot Crate");
+    private Component label = Component.literal("§lLoot Crate");
 
-    public LootCrateEntity(EntityType<?> type, World world) {
+    public LootCrateEntity(EntityType<?> type, Level world) {
         super(type, world);
         this.setCustomNameVisible(true);
 
@@ -231,52 +232,52 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
     private void setupAnimationStates() {
         if (this.idleAnimationTimeout <= 0) {
             this.idleAnimationTimeout = 40;
-            this.idleAnimationState.start(this.age);
+            this.idleAnimationState.start(this.tickCount);
         } else {
             --this.idleAnimationTimeout;
         }
     }
 
     @Override
-    protected Entity.MoveEffect getMoveEffect() {
-        return Entity.MoveEffect.NONE;
+    protected Entity.MovementEmission getMovementEmission() {
+        return Entity.MovementEmission.NONE;
     }
 
     @Override
-    public boolean canHit() {
+    public boolean isPickable() {
         return !this.isRemoved();
     }
 
     @Override
-    protected double getGravity() {
+    protected double getDefaultGravity() {
         return 0.04;
     }
 
     @Override
-    public boolean collidesWith(Entity other) {
+    public boolean canCollideWith(Entity other) {
         return true;
     }
 
     @Override
     public void tick() {
         super.tick();
-        this.tickPortalTeleportation();
+        this.handlePortal();
         this.applyGravity();
-        this.move(MovementType.SELF, this.getVelocity());
-        this.setVelocity(this.getVelocity().multiply(0.98));
-        this.shouldTickBlockCollision();
-        if (this.isOnGround()) {
+        this.move(MoverType.SELF, this.getDeltaMovement());
+        this.setDeltaMovement(this.getDeltaMovement().scale(0.98));
+        this.isAffectedByBlocks();
+        if (this.onGround()) {
             if(!getHasTouchedGround()) {
                 this.playSound(BlazinBlazeTwitchModSounds.THUD_SOUND_EFFECT, 1.0F, 1.0F);
-                this.getWorld().addParticleClient(ParticleTypes.EXPLOSION, this.getX(), (this.getY() + .3), this.getZ(), 1.0, 1.0, 1.0);
+                this.level().addParticle(ParticleTypes.EXPLOSION, this.getX(), (this.getY() + .3), this.getZ(), 1.0, 1.0, 1.0);
                 setHasTouchedGround(true);
-                this.setVelocity(this.getVelocity().multiply(0.7, -0.5, 0.7));
+                this.setDeltaMovement(this.getDeltaMovement().multiply(0.7, -0.5, 0.7));
             }else {
-                this.setVelocity(this.getVelocity().multiply(0.7, -0.5, 0.7));
+                this.setDeltaMovement(this.getDeltaMovement().multiply(0.7, -0.5, 0.7));
             }
         }
 
-        if(this.getWorld().isClient()) {
+        if(this.level().isClientSide()) {
             setupAnimationStates();
         }
 
@@ -289,16 +290,16 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
             destructionTimer = getDestructionTimer();
             double timeToSubstract = Math.floor((double) destructionTimer / 20);
             double time = (60 - timeToSubstract);
-            label = Text.literal(String.format(String.valueOf(time)));
+            label = Component.literal(String.format(String.valueOf(time)));
             //BlazinBlazeTwitchMod.LOGGER.info("NUMBER OF SECONDS: " + String.valueOf(time));
         }
         //BlazinBlazeTwitchMod.LOGGER.info("TICK!");
     }
 
     @Override
-    public ActionResult interact(PlayerEntity player, Hand hand) {
-        if(player.getWorld() instanceof ServerWorld serverWorld) {
-            this.playSound(SoundEvents.BLOCK_CHEST_OPEN, 1.0F, 0.5F);
+    public InteractionResult interact(final Player player, final InteractionHand hand, final Vec3 location) {
+        if(player.level() instanceof ServerLevel serverWorld) {
+            this.playSound(SoundEvents.CHEST_OPEN, 1.0F, 0.5F);
             //this.dropStack(serverWorld, BlazinBlazeTwitchModItems.MAIL_ITEM.getDefaultStack());
             //dropLoot(serverWorld, this.getDamageSources().cramming());
 
@@ -321,79 +322,79 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
                     if (multiple) {
                         if (ThreadLocalRandom.current().nextDouble() < (threshold * 1.2)) {
                             item.setCount(random.nextInt(16));
-                            this.dropStack(serverWorld, item);
+                            this.spawnAtLocation(serverWorld, item);
                             numberOfItems++;
                         } else {
-                            this.dropStack(serverWorld, item);
+                            this.spawnAtLocation(serverWorld, item);
                             numberOfItems++;
                         }
                     } else if (isEnchanted) {
                         if (ThreadLocalRandom.current().nextDouble() < 1) {
                             if (!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "armor")) {
 
-                                DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
-                                RegistryKey<Enchantment> rndmEnchantment = armorEnchantments.get(random.nextInt(armorEnchantments.size()));
-                                Optional<RegistryEntry.Reference<Enchantment>> enchantmentEntryTool = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT).getEntry(rndmEnchantment.getValue());
+                                RegistryAccess registryManager = serverWorld.registryAccess();
+                                ResourceKey<Enchantment> rndmEnchantment = armorEnchantments.get(random.nextInt(armorEnchantments.size()));
+                                Optional<Holder.Reference<Enchantment>> enchantmentEntryTool = registryManager.lookupOrThrow(Registries.ENCHANTMENT).get(rndmEnchantment.identifier());
                                 int levelTool = random.nextInt(5);
 
-                                enchantmentEntryTool.ifPresentOrElse(value -> item.addEnchantment(enchantmentEntryTool.get(), levelTool),
+                                enchantmentEntryTool.ifPresentOrElse(value -> item.enchant(enchantmentEntryTool.get(), levelTool),
                                         () -> BlazinBlazeTwitchMod.LOGGER.info("Armor Enchantment not found!"));
 
-                                this.dropStack(serverWorld, item);
+                                this.spawnAtLocation(serverWorld, item);
                                 numberOfItems++;
                             } else if (!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "tool")) {
 
-                                DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
-                                RegistryKey<Enchantment> rndmEnchantment = toolEnchantments.get(random.nextInt(toolEnchantments.size()));
-                                Optional<RegistryEntry.Reference<Enchantment>> enchantmentEntryTool = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT).getEntry(rndmEnchantment.getValue());
+                                RegistryAccess registryManager = serverWorld.registryAccess();
+                                ResourceKey<Enchantment> rndmEnchantment = toolEnchantments.get(random.nextInt(toolEnchantments.size()));
+                                Optional<Holder.Reference<Enchantment>> enchantmentEntryTool = registryManager.lookupOrThrow(Registries.ENCHANTMENT).get(rndmEnchantment.identifier());
                                 int levelTool = random.nextInt(5);
 
-                                enchantmentEntryTool.ifPresentOrElse(value -> item.addEnchantment(enchantmentEntryTool.get(), levelTool),
+                                enchantmentEntryTool.ifPresentOrElse(value -> item.enchant(enchantmentEntryTool.get(), levelTool),
                                         () -> BlazinBlazeTwitchMod.LOGGER.info("Tool Enchantment not found!"));
 
-                                this.dropStack(serverWorld, item);
+                                this.spawnAtLocation(serverWorld, item);
                                 numberOfItems++;
                             } else if (!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "bow")) {
 
-                                DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
-                                RegistryKey<Enchantment> rndmEnchantment = bowEnchantments.get(random.nextInt(bowEnchantments.size()));
-                                Optional<RegistryEntry.Reference<Enchantment>> enchantmentEntryTool = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT).getEntry(rndmEnchantment.getValue());
+                                RegistryAccess registryManager = serverWorld.registryAccess();
+                                ResourceKey<Enchantment> rndmEnchantment = bowEnchantments.get(random.nextInt(bowEnchantments.size()));
+                                Optional<Holder.Reference<Enchantment>> enchantmentEntryTool = registryManager.lookupOrThrow(Registries.ENCHANTMENT).get(rndmEnchantment.identifier());
                                 int levelTool = random.nextInt(5);
 
-                                enchantmentEntryTool.ifPresentOrElse(value -> item.addEnchantment(enchantmentEntryTool.get(), levelTool),
+                                enchantmentEntryTool.ifPresentOrElse(value -> item.enchant(enchantmentEntryTool.get(), levelTool),
                                         () -> BlazinBlazeTwitchMod.LOGGER.info("Bow Enchantment not found!"));
 
-                                this.dropStack(serverWorld, item);
+                                this.spawnAtLocation(serverWorld, item);
                                 numberOfItems++;
                             } else if (!Objects.equals(enchantableType, "none") && Objects.equals(enchantableType, "crossbow")) {
 
-                                DynamicRegistryManager registryManager = serverWorld.getRegistryManager();
-                                RegistryKey<Enchantment> rndmEnchantment = crossbowEnchantments.get(random.nextInt(crossbowEnchantments.size()));
-                                Optional<RegistryEntry.Reference<Enchantment>> enchantmentEntryTool = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT).getEntry(rndmEnchantment.getValue());
+                                RegistryAccess registryManager = serverWorld.registryAccess();
+                                ResourceKey<Enchantment> rndmEnchantment = crossbowEnchantments.get(random.nextInt(crossbowEnchantments.size()));
+                                Optional<Holder.Reference<Enchantment>> enchantmentEntryTool = registryManager.lookupOrThrow(Registries.ENCHANTMENT).get(rndmEnchantment.identifier());
                                 int levelTool = random.nextInt(5);
 
-                                enchantmentEntryTool.ifPresentOrElse(value -> item.addEnchantment(enchantmentEntryTool.get(), levelTool),
+                                enchantmentEntryTool.ifPresentOrElse(value -> item.enchant(enchantmentEntryTool.get(), levelTool),
                                         () -> BlazinBlazeTwitchMod.LOGGER.info("Crossbow Enchantment not found!"));
 
-                                this.dropStack(serverWorld, item);
+                                this.spawnAtLocation(serverWorld, item);
                                 numberOfItems++;
                             }
                         } else {
-                            this.dropStack(serverWorld, item);
+                            this.spawnAtLocation(serverWorld, item);
                             numberOfItems++;
                         }
                     } else {
                         Item stackItem = item.getItem();
                         if (stackItem == Items.POTION) {
-                            ItemStack potionItem = PotionContentsComponent.createStack(Items.POTION, possiblePotions.get(random.nextInt(possiblePotions.size())));
+                            ItemStack potionItem = PotionContents.createItemStack(Items.POTION, possiblePotions.get(random.nextInt(possiblePotions.size())));
 
-                            this.dropStack(serverWorld, potionItem);
+                            this.spawnAtLocation(serverWorld, potionItem);
                             numberOfItems++;
                         } else if (stackItem == Items.ENCHANTED_BOOK) {
-                            this.dropStack(serverWorld, item);
+                            this.spawnAtLocation(serverWorld, item);
                             numberOfItems++;
                         } else {
-                            this.dropStack(serverWorld, item);
+                            this.spawnAtLocation(serverWorld, item);
                             numberOfItems++;
                         }
                     }
@@ -402,64 +403,64 @@ public class LootCrateEntity extends Entity { //implements InventoryOwner
             } while (numberOfItems < 3);
 
             this.kill(serverWorld);
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         }else {
-            return ActionResult.FAIL;
+            return InteractionResult.FAIL;
         }
     }
 
     public int getDestructionTimer() {
-        return this.dataTracker.get(DESTRUCTION_TIMER);
+        return this.entityData.get(DESTRUCTION_TIMER);
     }
 
     public void setDestructionTimer(int destructionProgress) {
-        this.dataTracker.set(DESTRUCTION_TIMER, destructionProgress);
+        this.entityData.set(DESTRUCTION_TIMER, destructionProgress);
     }
 
     public boolean getHasTouchedGround() {
-        return this.dataTracker.get(HAS_TOUCHED_GROUND);
+        return this.entityData.get(HAS_TOUCHED_GROUND);
     }
 
     public void setHasTouchedGround(boolean hasGround) {
-        this.dataTracker.set(HAS_TOUCHED_GROUND, hasGround);
+        this.entityData.set(HAS_TOUCHED_GROUND, hasGround);
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        builder.add(DESTRUCTION_TIMER, 0);
-        builder.add(HAS_TOUCHED_GROUND, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(DESTRUCTION_TIMER, 0);
+        builder.define(HAS_TOUCHED_GROUND, false);
     }
 
     @Override
-    public boolean damage(ServerWorld world, DamageSource source, float amount) {
+    public boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
         return false;
     }
 
     @Override
-    public void onTrackedDataSet(TrackedData<?> data) {
-        super.onTrackedDataSet(data);
+    public void onSyncedDataUpdated(EntityDataAccessor<?> data) {
+        super.onSyncedDataUpdated(data);
     }
 
     @Override
-    protected void writeCustomData(WriteView nbt) {
+    protected void addAdditionalSaveData(ValueOutput nbt) {
         nbt.putInt("destruction_timer", getDestructionTimer());
         nbt.putBoolean("has_touched_ground", getHasTouchedGround());
     }
 
     @Override
-    public Text getDisplayName() {
+    public Component getDisplayName() {
         return label;
     }
 
     @Override
-    public boolean shouldRenderName() {
+    public boolean shouldShowName() {
         return true;
     }
 
     @Override
-    protected void readCustomData(ReadView nbt) {
-        setDestructionTimer(nbt.getInt("destruction_timer", 0));
-        setHasTouchedGround(nbt.getBoolean("has_touched_ground", false));
+    protected void readAdditionalSaveData(ValueInput nbt) {
+        setDestructionTimer(nbt.getIntOr("destruction_timer", 0));
+        setHasTouchedGround(nbt.getBooleanOr("has_touched_ground", false));
     }
 
     //private long getLootTableSeed() {
